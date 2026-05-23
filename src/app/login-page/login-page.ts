@@ -39,7 +39,7 @@ export class LoginPage {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.post('http://localhost:5000/api/users/login', {
+    this.http.post('https://taskflow-repomanger.onrender.com/api/users/login', {
       email: this.email,
       password: this.password
     }, { withCredentials:false }).subscribe({
@@ -94,7 +94,7 @@ export class LoginPage {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.http.post('http://localhost:5000/api/users/forgot-password', {
+    this.http.post('https://taskflow-repomanger.onrender.com/api/users/forgot-password', {
       email: this.forgotEmail
     }).subscribe({
       next: (res: any) => {
@@ -130,7 +130,7 @@ export class LoginPage {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.post('http://localhost:5000/api/users/reset-password', {
+    this.http.post('https://taskflow-repomanger.onrender.com/api/users/reset-password', {
       email: this.forgotEmail,
       otp: this.otp,
       newPassword: this.newPassword

@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class Projectservice {
-  private baseUrl = 'http://localhost:5000/api';
+  private baseUrl = 'https://taskflow-repomanger.onrender.com/api';
 
   constructor(private http: HttpClient) {}
 

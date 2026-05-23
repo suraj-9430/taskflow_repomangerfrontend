@@ -40,7 +40,7 @@ export class Layout implements OnInit {
   }
 
   logout(): void {
-    this.http.post('http://localhost:5000/api/users/logout', {}, { withCredentials: true }).subscribe({
+    this.http.post('https://taskflow-repomanger.onrender.com/api/users/logout', {}, { withCredentials: true }).subscribe({
       next: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
