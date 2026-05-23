@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-my-tasks',
@@ -16,20 +18,49 @@ export class MyTasks implements OnInit {
   priorityFilter: string = 'all';
   
   // Tasks assigned to this employee
-  myTasks: any[] = [
-    { id: 1, title: 'Implement User Authentication', description: 'Set up JWT authentication system with login/logout functionality', projectId: 2, projectName: 'Mobile App Development', status: 'In Progress', priority: 'High', dueDate: '2024-04-15', createdDate: '2024-04-01' },
-    { id: 2, title: 'API Documentation', description: 'Document all REST API endpoints with examples and response formats', projectId: 1, projectName: 'Website Redesign', status: 'To Do', priority: 'Low', dueDate: '2024-05-01', createdDate: '2024-04-10' },
-    { id: 3, title: 'Performance Optimization', description: 'Optimize website loading speed and reduce bundle size by 40%', projectId: 1, projectName: 'Website Redesign', status: 'To Do', priority: 'Medium', dueDate: '2024-05-15', createdDate: '2024-04-18' },
-    { id: 4, title: 'Fix Login Bug', description: 'Users unable to login with special characters in password - critical fix needed', projectId: 2, projectName: 'Mobile App Development', status: 'In Progress', priority: 'High', dueDate: '2024-04-12', createdDate: '2024-04-10' },
-    { id: 5, title: 'Dashboard UI Updates', description: 'Update dashboard with new design mockups from the design team', projectId: 1, projectName: 'Website Redesign', status: 'Completed', priority: 'Medium', dueDate: '2024-04-08', createdDate: '2024-04-01' },
-    { id: 6, title: 'Unit Test Coverage', description: 'Increase unit test coverage to 80% for core modules', projectId: 2, projectName: 'Mobile App Development', status: 'To Do', priority: 'Medium', dueDate: '2024-05-20', createdDate: '2024-04-15' },
-    { id: 7, title: 'Database Query Optimization', description: 'Optimize slow database queries identified in performance audit', projectId: 1, projectName: 'Website Redesign', status: 'Completed', priority: 'High', dueDate: '2024-04-05', createdDate: '2024-03-28' },
-  ];
-
+  myTasks: any[] = [];
   filteredTasks: any[] = [];
 
+  constructor(private http: HttpClient) {}
+
   ngOnInit(): void {
-    this.filteredTasks = [...this.myTasks];
+    this.fetchMyTasks();
+  }
+
+  fetchMyTasks(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.get<any>(`${environment.apiUrl}/tasks`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            const activeUserId = user.id;
+
+            // Filter tasks assigned to the logged-in user
+            this.myTasks = res.data.filter((t: any) => t.assignedTo && t.assignedTo._id === activeUserId)
+              .map((t: any) => ({
+                id: t._id,
+                title: t.title,
+                description: t.description || 'No description provided.',
+                projectName: t.projectId ? t.projectId.projectName : 'Unassigned Project',
+                projectId: t.projectId ? t.projectId._id : null,
+                status: t.status,
+                priority: t.priority,
+                dueDate: t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : 'N/A',
+                createdDate: t.createdAt ? new Date(t.createdAt).toISOString().split('T')[0] : 'N/A'
+              }));
+
+            this.filterTasks();
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Failed to fetch tasks', err);
+      }
+    });
   }
 
   // Statistics
@@ -66,9 +97,22 @@ export class MyTasks implements OnInit {
     this.filterTasks();
   }
 
-  // Status change handler
+  // Status change handler - save to database!
   onStatusChange(task: any): void {
-    console.log(`Task "${task.title}" status changed to: ${task.status}`);
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.put<any>(`${environment.apiUrl}/tasks/${task.id}`, { status: task.status }, { headers }).subscribe({
+      next: (res) => {
+        if (res.success) {
+          console.log(`Task "${task.title}" status updated to: ${task.status}`);
+          this.filterTasks();
+        }
+      },
+      error: (err) => {
+        console.error('Failed to update task status in database', err);
+      }
+    });
   }
 
   // Helper methods
@@ -91,6 +135,7 @@ export class MyTasks implements OnInit {
   }
 
   isOverdue(dueDate: string, status: string): boolean {
-    return new Date(dueDate) < new Date() && status !== 'Completed';
+    if (dueDate === 'N/A' || status === 'Completed') return false;
+    return new Date(dueDate) < new Date();
   }
 }

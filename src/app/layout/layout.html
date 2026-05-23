@@ -1,4 +1,4 @@
-<div class="main-container" [ngClass]="{'sidebar-hidden': isSidebarHidden}">
+<div class="main-container" [ngClass]="{'sidebar-hidden': isSidebarHidden, 'sidebar-visible': isMobileSidebarOpen}">
   <div class="sidebar">
 
     <!-- Header -->
@@ -103,13 +103,13 @@
         <li class="nav-divider"></li>
 
         <li>
-          <a href="#">
+          <a [routerLink]="getDashboardPrefix() + '/notifications'" routerLinkActive="active">
             <i class="fa-solid fa-bell"></i>
             <span>Notifications</span>
           </a>
         </li>
         <li>
-          <a href="#">
+          <a [routerLink]="getDashboardPrefix() + '/settings'" routerLinkActive="active">
             <i class="fa-solid fa-gear"></i>
             <span>Settings</span>
           </a>
@@ -126,6 +126,25 @@
   </div>
 
   <div class="content-area">
+    <!-- Mobile top bar header -->
+    <div class="mobile-header">
+      <button class="mobile-menu-btn" (click)="toggleMobileSidebar()" title="Toggle Menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+      <div class="mobile-brand">
+        <img src="/TaskFlowlogo1.png" class="mobile-logo" alt="TaskFlow Pro">
+        <span class="mobile-title">TaskFlow Pro</span>
+      </div>
+      <div class="mobile-header-right">
+        <!-- Spacer to balance/center layout if needed -->
+      </div>
+    </div>
+
     <router-outlet></router-outlet>
   </div>
+
+  <!-- Mobile Sidebar Overlay Backdrop -->
+  @if (isMobileSidebarOpen) {
+    <div class="sidebar-overlay" (click)="toggleMobileSidebar()"></div>
+  }
 </div>

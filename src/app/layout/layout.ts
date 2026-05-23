@@ -15,6 +15,7 @@ import { UserService } from '../createandmanage/user';
 })
 export class Layout implements OnInit {
   isSidebarHidden = false;
+  isMobileSidebarOpen = false;
   isManagerView = false;
   isEmployeeView = false;
   isAdminView = false;
@@ -34,10 +35,21 @@ export class Layout implements OnInit {
     this.isManagerView = url.includes('manager-dashboard');
     this.isEmployeeView = url.includes('employee-dashboard');
     this.isAdminView = !this.isManagerView && !this.isEmployeeView;
+    this.isMobileSidebarOpen = false;
   }
 
   toggleSidebar() {
     this.isSidebarHidden = !this.isSidebarHidden;
+  }
+
+  toggleMobileSidebar() {
+    this.isMobileSidebarOpen = !this.isMobileSidebarOpen;
+  }
+
+  getDashboardPrefix(): string {
+    if (this.isManagerView) return '/manager-dashboard';
+    if (this.isEmployeeView) return '/employee-dashboard';
+    return '/dashboard';
   }
 
   logout(): void {

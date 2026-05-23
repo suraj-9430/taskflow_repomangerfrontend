@@ -1,0 +1,388 @@
+/* ============================================================
+   Notifications Page Styling — Dark Industrial
+   ============================================================ */
+
+.notifications-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ── Page Header ── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+}
+
+.header-left h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.header-left p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* ── Filters Card ── */
+.filters-card {
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--surface-1);
+}
+
+.filters-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--r-md);
+  border: var(--border-subtle);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--t-base);
+}
+
+.filter-pill:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border-color: hsla(220, 15%, 100%, 0.15);
+}
+
+.filter-pill.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.filter-pill .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: var(--r-full);
+  background: var(--surface-3);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all var(--t-base);
+}
+
+.filter-pill.active .badge {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.filter-pill .badge-unread {
+  background: hsla(43, 96%, 56%, 0.15);
+  color: var(--accent);
+}
+
+.filter-pill .badge-alert {
+  background: hsla(0, 72%, 58%, 0.15);
+  color: var(--color-danger);
+}
+
+.filter-pill.active .badge-unread {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.filter-pill.active .badge-alert {
+  background: var(--color-danger);
+  color: white;
+}
+
+/* ── Notification List ── */
+.notification-list-wrapper {
+  min-height: 350px;
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface-1);
+  border: var(--border-subtle);
+  border-radius: var(--r-xl);
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--t-base);
+}
+
+.notification-item:hover {
+  background: var(--surface-2);
+  border-color: hsla(220, 15%, 100%, 0.12);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Indicator strip on left edge */
+.indicator-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: transparent;
+  transition: background var(--t-base);
+}
+
+.indicator-bar.task { background: var(--color-info); }
+.indicator-bar.project { background: var(--accent); }
+.indicator-bar.alert { background: var(--color-danger); }
+.indicator-bar.system { background: var(--text-muted); }
+
+/* Unread State styling */
+.notification-item.unread {
+  background: hsla(222, 13%, 14%, 0.4);
+  border-color: hsla(43, 96%, 56%, 0.15);
+}
+
+.notification-item.unread::after {
+  content: '';
+  position: absolute;
+  right: 1.25rem;
+  top: 1.25rem;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* Dim read notifications slightly */
+.notification-item:not(.unread) {
+  opacity: 0.75;
+}
+
+.notification-item:not(.unread):hover {
+  opacity: 0.95;
+}
+
+/* Icon Container */
+.notification-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--r-md);
+  font-size: 1.125rem;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  transition: all var(--t-base);
+}
+
+.notification-icon-container.task { color: var(--color-info); background: hsla(207, 90%, 60%, 0.08); }
+.notification-icon-container.project { color: var(--accent); background: hsla(43, 96%, 56%, 0.08); }
+.notification-icon-container.alert { color: var(--color-danger); background: hsla(0, 72%, 58%, 0.08); }
+.notification-icon-container.system { color: var(--text-secondary); background: hsla(220, 10%, 65%, 0.08); }
+
+.notification-item:hover .notification-icon-container {
+  transform: scale(1.05);
+}
+
+/* Content Area */
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.375rem;
+}
+
+.notification-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.notification-time {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.notification-message {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.notification-item:not(.unread) .notification-message {
+  color: var(--text-muted);
+}
+
+/* Actions panel inside item */
+.notification-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-self: center;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all var(--t-base);
+}
+
+.notification-item:hover .notification-actions {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.action-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  border-radius: var(--r-md);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast);
+}
+
+.action-btn:hover {
+  background: var(--surface-3);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+.action-btn.delete-btn:hover {
+  background: hsla(0, 72%, 58%, 0.12);
+  color: var(--color-danger);
+  border-color: hsla(0, 72%, 58%, 0.25);
+}
+
+/* ── Empty State ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  min-height: 350px;
+}
+
+.empty-icon-container {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--t-slow);
+}
+
+.empty-state:hover .empty-icon-container {
+  transform: scale(1.05) rotate(5deg);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  box-shadow: var(--shadow-amber);
+}
+
+.empty-state h3 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: var(--grad-amber);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  max-width: 320px;
+  font-size: 0.9375rem;
+}
+
+/* ── Mobile responsiveness ── */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .header-right {
+    width: 100%;
+  }
+
+  .header-right button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notification-item {
+    padding: 1.25rem;
+    gap: 0.875rem;
+  }
+
+  .notification-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .notification-time {
+    font-size: 0.75rem;
+  }
+
+  /* Keep actions visible on mobile since hover is unavailable */
+  .notification-actions {
+    opacity: 1;
+    transform: none;
+    align-self: flex-end;
+    margin-top: 0.5rem;
+  }
+
+  .notification-item.unread::after {
+    top: auto;
+    bottom: 1.25rem;
+    right: 1.25rem;
+  }
+}

@@ -1,0 +1,277 @@
+<div class="settings-container animate-fadeIn">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fa-solid fa-gear text-accent"></i> Settings</h1>
+      <p>Manage your account settings, notification preferences, and application theme.</p>
+    </div>
+  </div>
+
+  <div class="settings-layout">
+    <!-- Sidebar Navigation -->
+    <div class="settings-sidebar">
+      <div class="card nav-card">
+        <button class="settings-nav-item" [class.active]="activeTab === 'profile'" (click)="setTab('profile')">
+          <i class="fa-solid fa-user-astronaut"></i>
+          <div class="nav-text">
+            <h4>Profile Settings</h4>
+            <span>Public profile & bio</span>
+          </div>
+        </button>
+        <button class="settings-nav-item" [class.active]="activeTab === 'notifications'" (click)="setTab('notifications')">
+          <i class="fa-solid fa-envelope-open-text"></i>
+          <div class="nav-text">
+            <h4>Notification Settings</h4>
+            <span>Configure email & alerts</span>
+          </div>
+        </button>
+        <button class="settings-nav-item" [class.active]="activeTab === 'preferences'" (click)="setTab('preferences')">
+          <i class="fa-solid fa-sliders"></i>
+          <div class="nav-text">
+            <h4>System Preferences</h4>
+            <span>App theme & visuals</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div class="settings-content">
+      <div class="card content-card">
+        
+        <!-- PROFILE TAB -->
+        @if (activeTab === 'profile') {
+          <div class="tab-pane animate-scaleIn">
+            <h3 class="tab-title">Profile Settings</h3>
+            <p class="tab-desc">This information will be displayed publicly to other workspace members.</p>
+            
+            <!-- Avatar Section -->
+            <div class="avatar-upload-row">
+              <div class="avatar-preview-container">
+                <img [src]="profile.avatar" alt="Avatar" class="avatar-large">
+                <label for="avatar-input" class="edit-avatar-badge" title="Change Avatar">
+                  <i class="fa-solid fa-camera"></i>
+                </label>
+                <input id="avatar-input" type="file" (change)="onAvatarChange($event)" style="display: none;">
+              </div>
+              <div class="avatar-info">
+                <h4>Your Profile Photo</h4>
+                <p>PNG, JPG, or GIF up to 5MB. Suggested dimensions: 256x256.</p>
+              </div>
+            </div>
+
+            <!-- Profile Form -->
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" class="input-field" [(ngModel)]="profile.fullName" placeholder="Enter full name">
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" class="input-field disabled-field" [value]="profile.email" readonly title="Email cannot be changed">
+                <span class="field-hint">Managed by your system administrator.</span>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input type="text" class="input-field" [(ngModel)]="profile.phone" placeholder="+91 XXXXX XXXXX">
+              </div>
+              <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" class="input-field" [(ngModel)]="profile.title" placeholder="Job Title">
+              </div>
+              <div class="form-group col-span-2">
+                <label>Department</label>
+                <input type="text" class="input-field" [(ngModel)]="profile.department" placeholder="Department">
+              </div>
+              <div class="form-group col-span-2">
+                <label>Professional Bio</label>
+                <textarea class="input-field textarea-field" [(ngModel)]="profile.bio" rows="4" placeholder="Tell us about yourself..."></textarea>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- NOTIFICATIONS TAB -->
+        @if (activeTab === 'notifications') {
+          <div class="tab-pane animate-scaleIn">
+            <h3 class="tab-title">Notification Settings</h3>
+            <p class="tab-desc">Configure when and how you receive alerts and updates from TaskFlow.</p>
+            
+            <div class="toggle-list">
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Email Updates</h4>
+                  <p>Send me direct emails for critical account changes and monthly summaries.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.emailUpdates">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Desktop Push Alerts</h4>
+                  <p>Display real-time desktop banner notifications while TaskFlow is open.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.pushAlerts">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item-divider"></div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Task Assignments</h4>
+                  <p>Alert me immediately when I am assigned a new task or added to a team.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.taskAssigned">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Task Status Changes</h4>
+                  <p>Notify me when a task in my project is completed, blocked, or updated.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.statusChanged">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Deadline Approaching Alerts</h4>
+                  <p>Warn me about tasks or projects with deadlines approaching within 48 hours.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.deadlineAlerts">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Weekly Digest Summary</h4>
+                  <p>Send me a weekly visual productivity summary of tasks completed and milestones met.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="notifications.weeklySummary">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- PREFERENCES TAB -->
+        @if (activeTab === 'preferences') {
+          <div class="tab-pane animate-scaleIn">
+            <h3 class="tab-title">System Preferences</h3>
+            <p class="tab-desc">Customize the user experience and theme aesthetics of the application.</p>
+            
+            <div class="preferences-grid">
+              
+              <!-- Theme Color Pickers -->
+              <div class="preference-section">
+                <label class="pref-label">Accent Theme Color</label>
+                <p class="pref-desc">Choose your default system highlight color.</p>
+                <div class="theme-picker-row">
+                  <button class="theme-bubble amber" [class.selected]="preferences.themeColor === 'amber'" (click)="preferences.themeColor = 'amber'" title="Industrial Amber">
+                    <span class="bubble-inner"></span>
+                  </button>
+                  <button class="theme-bubble blue" [class.selected]="preferences.themeColor === 'blue'" (click)="preferences.themeColor = 'blue'" title="Cyberpunk Blue">
+                    <span class="bubble-inner"></span>
+                  </button>
+                  <button class="theme-bubble green" [class.selected]="preferences.themeColor === 'green'" (click)="preferences.themeColor = 'green'" title="Eco Emerald">
+                    <span class="bubble-inner"></span>
+                  </button>
+                  <button class="theme-bubble purple" [class.selected]="preferences.themeColor === 'purple'" (click)="preferences.themeColor = 'purple'" title="Nebula Purple">
+                    <span class="bubble-inner"></span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="preference-section">
+                <label class="pref-label">Interface Layout Density</label>
+                <p class="pref-desc">Adjust padding and sizes for list items and cards.</p>
+                <select class="input-field select-field" [(ngModel)]="preferences.density">
+                  <option value="cozy">Cozy (Standard Padding)</option>
+                  <option value="compact">Compact (Dense Lists & Tables)</option>
+                </select>
+              </div>
+
+              <div class="toggle-item-divider col-span-2"></div>
+
+              <!-- Extra Toggles -->
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Sound Effects</h4>
+                  <p>Play crisp auditory alerts on task completion and success events.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="preferences.soundEffects">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Keep Sidebar Expanded</h4>
+                  <p>Retain the full width sidebar by default instead of collapsing.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="preferences.sidebarExpanded">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+              <div class="toggle-item">
+                <div class="toggle-info">
+                  <h4>Rich UI Animations</h4>
+                  <p>Enable fluid page transitions, cards sliding, and button interactions.</p>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [(ngModel)]="preferences.animationsEnabled">
+                  <span class="slider round"></span>
+                </label>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- Footer CTA -->
+        <div class="settings-footer">
+          <button class="btn btn-primary" (click)="saveSettings()" [disabled]="isSaving">
+            @if (isSaving) {
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span>Saving Preferences...</span>
+            } @else {
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save Changes</span>
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message -->
+  @if (showToast) {
+    <div class="toast-notification animate-fadeInUp">
+      <div class="toast-icon">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="toast-text">
+        <span>{{ toastMessage }}</span>
+      </div>
+    </div>
+  }
+</div>

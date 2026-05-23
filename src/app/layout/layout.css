@@ -205,6 +205,14 @@
   background: var(--surface-0);
 }
 
+.mobile-header {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
 /* ── Collapsed state ── */
 .main-container.sidebar-hidden .sidebar {
   width: 68px;
@@ -262,6 +270,7 @@
     height: 100vh;
     transform: translateX(-100%);
     z-index: var(--z-sidebar);
+    transition: transform var(--t-slow) cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .main-container.sidebar-visible .sidebar {
@@ -269,5 +278,82 @@
     box-shadow: var(--shadow-xl);
   }
 
-  .content-area { margin-left: 0 !important; }
+  .content-area {
+    margin-left: 0 !important;
+  }
+
+  /* Mobile Top Bar */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.25rem;
+    background: var(--surface-1);
+    border-bottom: var(--border-subtle);
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-menu-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: var(--surface-2);
+    border: var(--border-subtle);
+    border-radius: var(--r-md);
+    color: var(--text-primary);
+    font-size: 1.125rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--t-base);
+  }
+
+  .mobile-menu-btn:hover {
+    background: var(--surface-3);
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+  }
+
+  .mobile-logo {
+    width: 2rem;
+    height: 2rem;
+    object-fit: contain;
+  }
+
+  .mobile-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    background: var(--grad-amber);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .mobile-header-right {
+    width: 2.5rem; /* Matches menu-btn width to center title area */
+  }
+
+  /* Mobile Backdrop Overlay */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: calc(var(--z-sidebar) - 1);
+    animation: fadeIn var(--t-fast) ease-out;
+  }
 }

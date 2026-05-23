@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-my-projects',
@@ -15,63 +17,84 @@ export class MyProjects implements OnInit {
   statusFilter: string = 'all';
 
   // Projects assigned to this employee
-  myProjects: any[] = [
-    { 
-      id: 1, 
-      name: 'Website Redesign', 
-      description: 'Complete redesign of the company website with modern UI/UX principles and improved performance metrics.',
-      status: 'Active', 
-      priority: 'High',
-      startDate: '2024-03-01',
-      deadline: '2024-06-30',
-      progress: 65,
-      tasks: { total: 15, completed: 10 },
-      team: ['John Smith', 'Emily Davis', 'Mike Wilson']
-    },
-    { 
-      id: 2, 
-      name: 'Mobile App Development', 
-      description: 'Native mobile application for iOS and Android with core business features and push notifications.',
-      status: 'Active', 
-      priority: 'High',
-      startDate: '2024-02-15',
-      deadline: '2024-08-15',
-      progress: 40,
-      tasks: { total: 25, completed: 10 },
-      team: ['Sarah Johnson', 'David Lee', 'You']
-    },
-    { 
-      id: 3, 
-      name: 'API Integration', 
-      description: 'Integration with third-party payment and analytics APIs for the main platform.',
-      status: 'Planning', 
-      priority: 'Medium',
-      startDate: '2024-04-01',
-      deadline: '2024-05-30',
-      progress: 15,
-      tasks: { total: 8, completed: 1 },
-      team: ['Mike Wilson', 'You']
-    },
-    { 
-      id: 4, 
-      name: 'Database Migration', 
-      description: 'Migrate legacy database to new cloud infrastructure with zero downtime.',
-      status: 'Completed', 
-      priority: 'High',
-      startDate: '2024-01-15',
-      deadline: '2024-03-01',
-      progress: 100,
-      tasks: { total: 12, completed: 12 },
-      team: ['John Smith', 'You']
-    }
-  ];
-
+  myProjects: any[] = [];
   filteredProjects: any[] = [];
   selectedProject: any = null;
   showDetailsModal: boolean = false;
 
+  constructor(private http: HttpClient) {}
+
   ngOnInit(): void {
-    this.filteredProjects = [...this.myProjects];
+    this.fetchMyProjects();
+  }
+
+  fetchMyProjects(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.get<any>(`${environment.apiUrl}/projects`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const user = JSON.parse(userStr);
+            const activeUserId = user.id;
+
+            this.myProjects = res.data.filter((p: any) => 
+              p.assignees && p.assignees.some((a: any) => a._id === activeUserId)
+            ).map((p: any) => ({
+              id: p._id,
+              name: p.projectName,
+              description: p.description || 'No description provided.',
+              status: p.status || 'Active',
+              priority: p.priority || 'Medium',
+              startDate: p.startDate ? new Date(p.startDate).toISOString().split('T')[0] : 'N/A',
+              deadline: p.deadline ? new Date(p.deadline).toISOString().split('T')[0] : 'N/A',
+              progress: p.progress || 0,
+              tasks: { total: 0, completed: 0 }, // Will load dynamically
+              team: p.assignees ? p.assignees.map((a: any) => `${a.firstName} ${a.lastName}`) : []
+            }));
+
+            // Dynamically query task completions ratios and repaint progress!
+            this.fetchTaskCounts();
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Failed to fetch projects', err);
+      }
+    });
+  }
+
+  fetchTaskCounts(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    this.http.get<any>(`${environment.apiUrl}/tasks`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const allTasks = res.data;
+          this.myProjects.forEach(proj => {
+            const projTasks = allTasks.filter((t: any) => t.projectId && t.projectId._id === proj.id);
+            const total = projTasks.length;
+            const completed = projTasks.filter((t: any) => t.status === 'Completed').length;
+            proj.tasks = { total, completed };
+            
+            // Recalculate progress dynamically based on completed tasks ratio
+            if (total > 0) {
+              proj.progress = Math.round((completed / total) * 100);
+            } else {
+              proj.progress = 0;
+            }
+          });
+          this.filterProjects();
+        }
+      },
+      error: (err) => {
+        console.error('Failed to fetch task counts', err);
+        this.filterProjects();
+      }
+    });
   }
 
   // Statistics
@@ -80,7 +103,7 @@ export class MyProjects implements OnInit {
   }
 
   get activeProjects(): number {
-    return this.myProjects.filter(p => p.status === 'Active').length;
+    return this.myProjects.filter(p => p.status === 'Active' || p.status === 'In Progress').length;
   }
 
   get completedProjects(): number {
@@ -96,7 +119,16 @@ export class MyProjects implements OnInit {
     this.filteredProjects = this.myProjects.filter(project => {
       const matchesSearch = project.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
                            project.description.toLowerCase().includes(this.searchTerm.toLowerCase());
-      const matchesStatus = this.statusFilter === 'all' || project.status === this.statusFilter;
+      
+      let matchesStatus = false;
+      if (this.statusFilter === 'all') {
+        matchesStatus = true;
+      } else if (this.statusFilter === 'Active') {
+        matchesStatus = project.status === 'Active' || project.status === 'In Progress';
+      } else {
+        matchesStatus = project.status === this.statusFilter;
+      }
+      
       return matchesSearch && matchesStatus;
     });
   }
@@ -121,7 +153,8 @@ export class MyProjects implements OnInit {
   getStatusClass(status: string): string {
     switch (status) {
       case 'Completed': return 'status-completed';
-      case 'Active': return 'status-active';
+      case 'Active':
+      case 'In Progress': return 'status-active';
       case 'Planning': return 'status-planning';
       case 'On Hold': return 'status-hold';
       default: return '';
@@ -138,13 +171,14 @@ export class MyProjects implements OnInit {
   }
 
   getProgressColor(progress: number): string {
-    if (progress >= 75) return '#28a745';
-    if (progress >= 50) return '#ffc107';
-    if (progress >= 25) return '#fd7e14';
-    return '#dc3545';
+    if (progress >= 75) return 'var(--color-success)';
+    if (progress >= 50) return 'var(--accent)';
+    if (progress >= 25) return 'var(--color-info)';
+    return 'var(--color-danger)';
   }
 
   getDaysRemaining(deadline: string): number {
+    if (deadline === 'N/A') return 0;
     const today = new Date();
     const dueDate = new Date(deadline);
     const diffTime = dueDate.getTime() - today.getTime();
@@ -152,6 +186,7 @@ export class MyProjects implements OnInit {
   }
 
   isOverdue(deadline: string, status: string): boolean {
-    return this.getDaysRemaining(deadline) < 0 && status !== 'Completed';
+    if (deadline === 'N/A' || status === 'Completed') return false;
+    return this.getDaysRemaining(deadline) < 0;
   }
 }

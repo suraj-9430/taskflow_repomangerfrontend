@@ -1,0 +1,90 @@
+<div class="notifications-container animate-fadeIn">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fa-solid fa-bell text-accent animate-pulse"></i> Notifications</h1>
+      <p>Stay updated with task assignments, project changes, and system alerts.</p>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-ghost" (click)="markAllAsRead()" [disabled]="notifications.length === 0">
+        <i class="fa-solid fa-check-double text-accent"></i>
+        <span>Mark All as Read</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters & Summary Card -->
+  <div class="card filters-card">
+    <div class="filters-pills">
+      <button class="filter-pill" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">
+        All <span class="badge">{{ notifications.length }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter === 'unread'" (click)="setFilter('unread')">
+        Unread <span class="badge badge-unread">{{ getUnreadCount() }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter === 'task'" (click)="setFilter('task')">
+        Tasks <span class="badge">{{ getTypeCount('task') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter === 'project'" (click)="setFilter('project')">
+        Projects <span class="badge">{{ getTypeCount('project') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter === 'alert'" (click)="setFilter('alert')">
+        Alerts <span class="badge badge-alert">{{ getTypeCount('alert') }}</span>
+      </button>
+      <button class="filter-pill" [class.active]="activeFilter === 'system'" (click)="setFilter('system')">
+        System <span class="badge">{{ getTypeCount('system') }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification List -->
+  <div class="notification-list-wrapper">
+    @if (filteredNotifications.length > 0) {
+      <div class="notification-list">
+        @for (item of filteredNotifications; track item.id) {
+          <div class="notification-item" [class.unread]="!item.isRead" [class.alert-type]="item.type === 'alert'" (click)="markAsRead(item)">
+            <!-- Indicator Border/Dot -->
+            <div class="indicator-bar" [class]="item.type"></div>
+
+            <!-- Icon -->
+            <div class="notification-icon-container" [class]="item.type">
+              <i [class]="getIconClass(item.type)"></i>
+            </div>
+
+            <!-- Content -->
+            <div class="notification-content">
+              <div class="notification-title-row">
+                <h4 class="notification-title">{{ item.title }}</h4>
+                <span class="notification-time">{{ item.time }}</span>
+              </div>
+              <p class="notification-message">{{ item.message }}</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="notification-actions">
+              <button class="action-btn" (click)="toggleReadStatus(item, $event)" [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
+                @if (item.isRead) {
+                  <i class="fa-regular fa-envelope"></i>
+                } @else {
+                  <i class="fa-solid fa-envelope-open"></i>
+                }
+              </button>
+              <button class="action-btn delete-btn" (click)="deleteNotification(item.id, $event)" title="Dismiss">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- Empty State -->
+      <div class="card empty-state animate-scaleIn">
+        <div class="empty-icon-container">
+          <i class="fa-solid fa-bell-slash"></i>
+        </div>
+        <h3>All Caught Up!</h3>
+        <p>No notifications found in the "{{ activeFilter }}" category.</p>
+      </div>
+    }
+  </div>
+</div>

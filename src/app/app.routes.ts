@@ -11,6 +11,8 @@ import { Employees } from './manager/employees/employees';
 import { EmployeeDashboard } from './employee-dashboard/employee-dashboard';
 import { MyTasks } from './employee/my-tasks/my-tasks';
 import { MyProjects } from './employee/my-projects/my-projects';
+import { Settings } from './settings/settings';
+import { Notifications } from './notifications/notifications';
 
 export const routes: Routes = [
   { path:"", loadComponent: () => import('./login-page/login-page').then(m => m.LoginPage) ,pathMatch:'full'},
@@ -21,7 +23,9 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/layout').then(m => m.Layout),
     children: [
       { path: '', component: AdminDashboard },
-      {path:'action',component:Createandmanage}
+      { path: 'action', component: Createandmanage },
+      { path: 'settings', component: Settings },
+      { path: 'notifications', component: Notifications }
     ]
   },
 
@@ -33,7 +37,9 @@ export const routes: Routes = [
       { path: '', component: ManagerDashboard },
       { path: 'projects', component: Projects },
       { path: 'tasks', component: Tasks },
-      { path: 'employees', component: Employees }
+      { path: 'employees', component: Employees },
+      { path: 'settings', component: Settings },
+      { path: 'notifications', component: Notifications }
     ]
   },
 
@@ -44,7 +50,9 @@ export const routes: Routes = [
     children: [
       { path: '', component: EmployeeDashboard },
       { path: 'my-tasks', component: MyTasks },
-      { path: 'my-projects', component: MyProjects }
+      { path: 'my-projects', component: MyProjects },
+      { path: 'settings', component: Settings },
+      { path: 'notifications', component: Notifications }
     ]
   },
 
