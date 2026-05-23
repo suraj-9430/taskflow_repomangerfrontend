@@ -1,0 +1,200 @@
+<div class="my-projects-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fas fa-project-diagram"></i> My Projects</h1>
+      <p>View all projects you're assigned to</p>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="stats-row">
+    <div class="stat-card" (click)="setStatusFilter('all')" [class.active]="statusFilter === 'all'">
+      <div class="stat-icon purple"><i class="fas fa-folder"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalProjects }}</span>
+        <span class="stat-label">Total Projects</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('Active')" [class.active]="statusFilter === 'Active'">
+      <div class="stat-icon blue"><i class="fas fa-play-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ activeProjects }}</span>
+        <span class="stat-label">Active</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('Planning')" [class.active]="statusFilter === 'Planning'">
+      <div class="stat-icon orange"><i class="fas fa-lightbulb"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ planningProjects }}</span>
+        <span class="stat-label">Planning</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('Completed')" [class.active]="statusFilter === 'Completed'">
+      <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completedProjects }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search projects..." [(ngModel)]="searchTerm" (input)="filterProjects()">
+    </div>
+  </div>
+
+  <!-- Projects Grid -->
+  <div class="projects-grid">
+    @for(project of filteredProjects; track project.id) {
+    <div class="project-card" [class.completed]="project.status === 'Completed'">
+      <div class="project-header">
+        <div class="project-badges">
+          <span class="status-badge" [ngClass]="getStatusClass(project.status)">{{ project.status }}</span>
+          <span class="priority-badge" [ngClass]="getPriorityClass(project.priority)">{{ project.priority }}</span>
+        </div>
+        @if(isOverdue(project.deadline, project.status)) {
+        <span class="overdue-tag"><i class="fas fa-exclamation-circle"></i> Overdue</span>
+        }
+      </div>
+      
+      <h3 class="project-name">{{ project.name }}</h3>
+      <p class="project-description">{{ project.description }}</p>
+      
+      <!-- Progress Bar -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span>Progress</span>
+          <span class="progress-value">{{ project.progress }}%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="project.progress" [style.background]="getProgressColor(project.progress)"></div>
+        </div>
+      </div>
+      
+      <!-- Tasks Overview -->
+      <div class="tasks-overview">
+        <i class="fas fa-tasks"></i>
+        <span>{{ project.tasks.completed }}/{{ project.tasks.total }} Tasks Completed</span>
+      </div>
+      
+      <!-- Dates -->
+      <div class="project-dates">
+        <div class="date-item">
+          <i class="fas fa-calendar-plus"></i>
+          <span>Start: {{ project.startDate }}</span>
+        </div>
+        <div class="date-item" [class.overdue]="isOverdue(project.deadline, project.status)">
+          <i class="fas fa-calendar-times"></i>
+          <span>Due: {{ project.deadline }}</span>
+        </div>
+      </div>
+      
+      <!-- Team -->
+      <div class="team-section">
+        <span class="team-label">Team:</span>
+        <div class="team-members">
+          @for(member of project.team.slice(0, 3); track member) {
+          <span class="team-avatar" [title]="member">{{ member.charAt(0) }}</span>
+          }
+          @if(project.team.length > 3) {
+          <span class="team-more">+{{ project.team.length - 3 }}</span>
+          }
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <button class="view-details-btn" (click)="viewDetails(project)">
+        <i class="fas fa-eye"></i> View Details
+      </button>
+    </div>
+    }
+    
+    @if(filteredProjects.length === 0) {
+    <div class="empty-state">
+      <i class="fas fa-folder-open"></i>
+      <h3>No projects found</h3>
+      <p>Try adjusting your search criteria</p>
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Project Details Modal -->
+@if(showDetailsModal && selectedProject) {
+<div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2>{{ selectedProject.name }}</h2>
+        <div class="modal-badges">
+          <span class="status-badge" [ngClass]="getStatusClass(selectedProject.status)">{{ selectedProject.status }}</span>
+          <span class="priority-badge" [ngClass]="getPriorityClass(selectedProject.priority)">{{ selectedProject.priority }}</span>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="detail-section">
+        <h4><i class="fas fa-info-circle"></i> Description</h4>
+        <p>{{ selectedProject.description }}</p>
+      </div>
+      
+      <div class="detail-grid">
+        <div class="detail-item">
+          <label>Start Date</label>
+          <span>{{ selectedProject.startDate }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Deadline</label>
+          <span [class.overdue]="isOverdue(selectedProject.deadline, selectedProject.status)">{{ selectedProject.deadline }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Days Remaining</label>
+          <span [class.overdue]="getDaysRemaining(selectedProject.deadline) < 0">
+            {{ getDaysRemaining(selectedProject.deadline) > 0 ? getDaysRemaining(selectedProject.deadline) + ' days' : 'Overdue' }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <label>Progress</label>
+          <span>{{ selectedProject.progress }}%</span>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4><i class="fas fa-tasks"></i> Tasks</h4>
+        <div class="tasks-summary">
+          <div class="task-stat">
+            <span class="task-count">{{ selectedProject.tasks.total }}</span>
+            <span>Total</span>
+          </div>
+          <div class="task-stat completed">
+            <span class="task-count">{{ selectedProject.tasks.completed }}</span>
+            <span>Done</span>
+          </div>
+          <div class="task-stat pending">
+            <span class="task-count">{{ selectedProject.tasks.total - selectedProject.tasks.completed }}</span>
+            <span>Pending</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="detail-section">
+        <h4><i class="fas fa-users"></i> Team Members</h4>
+        <div class="team-list">
+          @for(member of selectedProject.team; track member) {
+          <div class="team-member-item">
+            <span class="member-avatar">{{ member.charAt(0) }}</span>
+            <span class="member-name">{{ member }}</span>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+}

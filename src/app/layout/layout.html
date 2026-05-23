@@ -1,0 +1,131 @@
+<div class="main-container" [ngClass]="{'sidebar-hidden': isSidebarHidden}">
+  <div class="sidebar">
+
+    <!-- Header -->
+    <div class="sidebar-header">
+      @if(!isSidebarHidden) {
+        <img src="/TaskFlowlogo1.png" class="logo" alt="TaskFlow Pro">
+        <span>TaskFlow Pro</span>
+      }
+      <button class="toggle-btn" (click)="toggleSidebar()" title="Toggle sidebar">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+      <ul>
+
+        <!-- Manager Navigation -->
+        @if(isManagerView) {
+          @if(!isSidebarHidden) { <li class="nav-label">Overview</li> }
+          <li>
+            <a routerLink="/manager-dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+              <i class="fa-solid fa-gauge-high"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          @if(!isSidebarHidden) { <li class="nav-label">Manage</li> }
+          <li>
+            <a routerLink="/manager-dashboard/projects" routerLinkActive="active">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>Projects</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/manager-dashboard/tasks" routerLinkActive="active">
+              <i class="fa-solid fa-list-check"></i>
+              <span>Tasks</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/manager-dashboard/employees" routerLinkActive="active">
+              <i class="fa-solid fa-users"></i>
+              <span>Employees</span>
+            </a>
+          </li>
+        }
+
+        <!-- Employee Navigation -->
+        @if(isEmployeeView) {
+          @if(!isSidebarHidden) { <li class="nav-label">My Space</li> }
+          <li>
+            <a routerLink="/employee-dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+              <i class="fa-solid fa-gauge-high"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/employee-dashboard/my-tasks" routerLinkActive="active">
+              <i class="fa-solid fa-list-check"></i>
+              <span>My Tasks</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/employee-dashboard/my-projects" routerLinkActive="active">
+              <i class="fa-solid fa-diagram-project"></i>
+              <span>My Projects</span>
+            </a>
+          </li>
+        }
+
+        <!-- Admin Navigation -->
+        @if(isAdminView) {
+          @if(!isSidebarHidden) { <li class="nav-label">Overview</li> }
+          <li>
+            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+              <i class="fa-solid fa-gauge-high"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          @if(!isSidebarHidden) { <li class="nav-label">Users</li> }
+          <li>
+            <a routerLink="/dashboard/action" [queryParams]="{option: 'create'}" routerLinkActive="active">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>Create User</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/dashboard/action" [queryParams]="{option: 'managerole'}" routerLinkActive="active">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>Manage Roles</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/dashboard/action" [queryParams]="{option: 'deactive'}" routerLinkActive="active">
+              <i class="fa-solid fa-user-xmark"></i>
+              <span>Deactivate Users</span>
+            </a>
+          </li>
+        }
+
+        <!-- Common -->
+        <li class="nav-divider"></li>
+
+        <li>
+          <a href="#">
+            <i class="fa-solid fa-bell"></i>
+            <span>Notifications</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa-solid fa-gear"></i>
+            <span>Settings</span>
+          </a>
+        </li>
+        <li>
+          <a (click)="logout()" style="cursor:pointer;">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Logout</span>
+          </a>
+        </li>
+
+      </ul>
+    </nav>
+  </div>
+
+  <div class="content-area">
+    <router-outlet></router-outlet>
+  </div>
+</div>

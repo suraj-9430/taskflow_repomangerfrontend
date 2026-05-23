@@ -1,0 +1,161 @@
+<div class="manager-dashboard">
+  <!-- Header -->
+  <div class="header">
+    <h1>Manager Dashboard</h1>
+    <div class="header-right">
+      <div class="notification-wrapper">
+        <i class="fa-solid fa-bell notification-icon"></i>
+        <span class="badge">5</span>
+      </div>
+      <span>{{ managerName }}</span>
+      <img src="manager.png" alt="Manager Avatar" class="avatar">
+      <button class="logout-btn" (click)="logout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Widgets -->
+  <div class="widgets">
+    <div class="widget-card" routerLink="/manager-dashboard/projects">
+      <div class="icon-bg blue"><i class="fa-solid fa-diagram-project"></i></div>
+      <div class="widget-content">
+        <p>Total Projects</p>
+        <h3>{{ totalProjects }}</h3>
+      </div>
+    </div>
+    <div class="widget-card" routerLink="/manager-dashboard/tasks">
+      <div class="icon-bg green"><i class="fa-solid fa-list-check"></i></div>
+      <div class="widget-content">
+        <p>Total Tasks</p>
+        <h3>{{ totalTasks }}</h3>
+      </div>
+    </div>
+    <div class="widget-card" routerLink="/manager-dashboard/tasks">
+      <div class="icon-bg orange"><i class="fa-solid fa-rotate"></i></div>
+      <div class="widget-content">
+        <p>In Progress</p>
+        <h3>{{ inProgressTasks }}</h3>
+      </div>
+    </div>
+    <div class="widget-card" routerLink="/manager-dashboard/employees">
+      <div class="icon-bg purple"><i class="fa-solid fa-users"></i></div>
+      <div class="widget-content">
+        <p>Team Members</p>
+        <h3>{{ totalEmployees }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <button class="action-card" routerLink="/manager-dashboard/projects">
+      <i class="fa-solid fa-folder-open"></i>
+      <span>Manage Projects</span>
+    </button>
+    <button class="action-card" routerLink="/manager-dashboard/tasks">
+      <i class="fa-solid fa-plus-circle"></i>
+      <span>Manage Tasks</span>
+    </button>
+    <button class="action-card" routerLink="/manager-dashboard/employees">
+      <i class="fa-solid fa-user-group"></i>
+      <span>View Team</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Grid -->
+  <div class="dashboard-grid">
+    <!-- Recent Projects -->
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-diagram-project"></i> Recent Projects</h2>
+        <a routerLink="/manager-dashboard/projects" class="view-all-link">
+          View All <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="recent-projects">
+        @for(project of projects.slice(0, 4); track project._id) {
+        <div class="project-item">
+          <div class="project-info">
+            <h4>{{ project.projectName || project.name }}</h4>
+            <span class="status-badge small" [ngClass]="getStatusClass(project.status)">{{ project.status }}</span>
+          </div>
+          <div class="project-meta">
+            <div class="progress-mini">
+              <div class="progress-bar-mini">
+                <div class="progress-fill-mini"
+                  [style.width.%]="project.progress"
+                  [style.background-color]="getProgressColor(project.progress)"></div>
+              </div>
+              <span>{{ project.progress }}%</span>
+            </div>
+            <span class="deadline"><i class="fa-solid fa-calendar-days"></i> {{ project.deadline | date }}</span>
+          </div>
+        </div>
+        }
+        @if(projects.length === 0) {
+        <div class="no-data">No projects found.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Recent Tasks -->
+    <div class="section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-list-check"></i> Recent Tasks</h2>
+        <a routerLink="/manager-dashboard/tasks" class="view-all-link">
+          View All <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+      <div class="recent-tasks">
+        @for(task of recentTasks.slice(0, 5); track task._id) {
+        <div class="task-item" [ngClass]="getPriorityClass(task.priority)">
+          <div class="task-content">
+            <h4>{{ task.title }}</h4>
+            <div class="task-meta">
+              <span class="task-project"><i class="fa-solid fa-folder"></i> {{ getProjectName(task.projectId) }}</span>
+              <span class="task-assignee"><i class="fa-solid fa-user"></i> {{ getEmployeeName(task.assignedTo) }}</span>
+            </div>
+          </div>
+          <span class="task-status" [ngClass]="getTaskStatusClass(task.status)">{{ task.status }}</span>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Overview -->
+  <div class="section team-section">
+    <div class="section-header">
+      <h2><i class="fa-solid fa-user-group"></i> Team Overview</h2>
+      <a routerLink="/manager-dashboard/employees" class="view-all-link">
+        View All <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+    <div class="team-grid">
+      @for(employee of employees.slice(0, 4); track employee.id) {
+      <div class="team-card">
+        <div class="team-avatar">{{ employee.name.charAt(0) }}</div>
+        <div class="team-info">
+          <h4>{{ employee.name }}</h4>
+          <span class="team-role">{{ employee.role }}</span>
+        </div>
+        <div class="team-stats">
+          <div class="stat">
+            <span class="stat-num">{{ employee.tasksAssigned }}</span>
+            <span class="stat-label">Tasks</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num">{{ employee.projectIds.length }}</span>
+            <span class="stat-label">Projects</span>
+          </div>
+        </div>
+        <span class="workload-badge" [ngClass]="getWorkloadClass(employee.workload)">{{ employee.workload }}</span>
+      </div>
+      }
+      @if(employees.length === 0) {
+      <div class="no-data" style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--text-muted);">No employees found.</div>
+      }
+    </div>
+  </div>
+</div>

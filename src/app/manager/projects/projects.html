@@ -1,0 +1,264 @@
+<div class="projects-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fas fa-project-diagram"></i> Projects</h1>
+      <p>Manage all your projects in one place</p>
+    </div>
+    <button class="create-btn" (click)="openCreateModal()">
+      <i class="fas fa-plus"></i> New Project
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="fas fa-folder"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalProjects }}</span>
+        <span class="stat-label">Total Projects</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-spinner"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inProgressProjects }}</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completedProjects }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red"><i class="fas fa-pause-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ onHoldProjects }}</span>
+        <span class="stat-label">On Hold</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search projects..." [(ngModel)]="searchTerm" (input)="filterProjects()">
+    </div>
+    <div class="filter-tabs">
+      <button [class.active]="statusFilter === 'all'" (click)="setStatusFilter('all')">All</button>
+      <button [class.active]="statusFilter === 'In Progress'" (click)="setStatusFilter('In Progress')">In Progress</button>
+      <button [class.active]="statusFilter === 'Completed'" (click)="setStatusFilter('Completed')">Completed</button>
+      <button [class.active]="statusFilter === 'On Hold'" (click)="setStatusFilter('On Hold')">On Hold</button>
+    </div>
+  </div>
+
+  <!-- Projects Table -->
+  <div class="projects-table-container">
+    <table class="projects-table">
+      <thead>
+        <tr>
+          <th>Project ID</th>
+          <th>Project Name</th>
+          <th>Priority</th>
+          <th>Start Date</th>
+          <th>Deadline</th>
+          <th>Team</th>
+          <th>Progress</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(project of filteredProjects; track project._id) {
+        <tr>
+          <td>
+            <span class="project-id-badge">{{ project.projectId }}</span>
+          </td>
+          <td>
+            <div class="project-name-cell">
+              <strong>{{ project.name }}</strong>
+              <span class="project-desc">{{ project.description }}</span>
+            </div>
+          </td>
+          <td>
+            <span class="priority-badge" [ngClass]="getPriorityClass(project.priority)">{{ project.priority }}</span>
+          </td>
+          <td>{{ formatDate(project.startDate) }}</td>
+          <td>{{ formatDate(project.deadline) }}</td>
+          <td>
+            <div class="team-avatars">
+              @for(emp of getProjectEmployees(project).slice(0, 3); track emp._id) {
+              <div class="mini-avatar" [title]="emp.name">{{ emp.name.charAt(0) }}</div>
+              }
+              @if(project.employeeIds.length > 3) {
+              <div class="mini-avatar more">+{{ project.employeeIds.length - 3 }}</div>
+              }
+              @if(project.employeeIds.length === 0) {
+              <span class="no-team">—</span>
+              }
+            </div>
+          </td>
+          <td>
+            <div class="progress-cell">
+              <div class="progress-bar">
+                <div class="progress-fill"
+                  [style.width.%]="project.progress"
+                  [style.background-color]="getProgressColor(project.progress)">
+                </div>
+              </div>
+              <span class="progress-text">{{ project.progress }}%</span>
+            </div>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(project.status)">{{ project.status }}</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="action-btn edit" title="Edit" (click)="openEditModal(project)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="action-btn delete" title="Delete" (click)="deleteProject(project)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+        @if(filteredProjects.length === 0) {
+        <tr>
+          <td colspan="9" class="no-data">
+            <i class="fas fa-folder-open" style="font-size:2rem; margin-bottom:0.5rem; display:block; color:var(--text-muted)"></i>
+            No projects found
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create / Edit Modal -->
+  @if(showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fas fa-project-diagram"></i> {{ isEditing ? 'Edit Project' : 'Create New Project' }}</h3>
+        <button class="close-btn" (click)="closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Project ID (readonly) -->
+        <div class="form-group">
+          <label>Project ID:</label>
+          <input type="text"
+            [value]="currentProject.projectId || ''"
+            [placeholder]="isEditing ? currentProject.projectId : 'Auto generated by backend'"
+            readonly>
+        </div>
+
+        <!-- Project Name -->
+        <div class="form-group">
+          <label>Project Name: <span class="required">*</span></label>
+          <input type="text" [(ngModel)]="currentProject.name" placeholder="Enter project name">
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label>Description:</label>
+          <textarea [(ngModel)]="currentProject.description" placeholder="Enter project description" rows="3"></textarea>
+        </div>
+
+        <!-- Dates -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date: <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="currentProject.startDate">
+          </div>
+          <div class="form-group">
+            <label>Deadline: <span class="required">*</span></label>
+            <input type="date" [(ngModel)]="currentProject.deadline">
+          </div>
+        </div>
+
+        <!-- Status & Priority -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status:</label>
+            <select [(ngModel)]="currentProject.status">
+              <option value="In Progress">In Progress</option>
+              <option value="On Hold">On Hold</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority:</label>
+            <select [(ngModel)]="currentProject.priority">
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div class="form-group">
+          <label>Progress (%): <span class="progress-hint">{{ currentProject.progress }}%</span></label>
+          <input type="range" [(ngModel)]="currentProject.progress" min="0" max="100"
+            class="progress-range">
+        </div>
+
+        <!-- Assign Employees -->
+        <div class="form-group">
+          <label>Assign Employees:</label>
+          <select (change)="addEmployee($event)">
+            <option value="">-- Select Employee --</option>
+            @for(emp of getAvailableEmployees(); track emp._id) {
+            <option [value]="emp._id">
+              {{ emp.name }} — {{ emp.designation }}
+              @if(emp.empStatus !== 'active') { ({{ emp.empStatus }}) }
+            </option>
+            }
+            @if(getAvailableEmployees().length === 0 && employees.length === 0) {
+            <option disabled>Loading employees...</option>
+            }
+            @if(getAvailableEmployees().length === 0 && employees.length > 0) {
+            <option disabled>All employees already assigned</option>
+            }
+          </select>
+          <div class="selected-employees">
+            @for(emp of getProjectEmployees(currentProject); track emp._id) {
+            <span class="employee-tag">
+              {{ emp.name }}
+              <button type="button" class="remove-tag" (click)="removeEmployee(emp._id)">
+                <i class="fas fa-times"></i>
+              </button>
+            </span>
+            }
+          </div>
+        </div>
+
+        <!-- Error -->
+        @if(saveError) {
+        <div class="form-error">
+          <i class="fas fa-exclamation-circle"></i> {{ saveError }}
+        </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeModal()">Cancel</button>
+        <button class="save-btn" (click)="saveProject()" [disabled]="isSaving">
+          @if(isSaving) {
+            <i class="fas fa-spinner fa-spin"></i> Saving...
+          } @else {
+            {{ isEditing ? 'Update' : 'Create' }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

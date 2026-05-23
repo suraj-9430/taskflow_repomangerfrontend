@@ -1,0 +1,263 @@
+@if (action==='create' || action==='edit') {
+<div class="create-user-container">
+    <div class="back-link" routerLink="/dashboard">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </div>
+    <h2 class="page-title">
+      @if(isEditMode) { Edit <span>User</span> } @else { Create New <span>User</span> }
+    </h2>
+
+    <form class="create-user-form" (ngSubmit)="onSubmit()">
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="employeeId">Employee ID</label>
+                <input type="text" id="employeeId" placeholder="Auto-Generated on submit" name="employeeId"
+                    [(ngModel)]="employeeId" required disabled>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="role">Role</label>
+                <select id="role" name="role" [(ngModel)]="role" required>
+                    <option value="" disabled>Select Role</option>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="employee">Employee</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row col-3">
+            <div class="form-group col-md-4">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" name="firstName" [(ngModel)]="firstName" required>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="middleName">Middle Name</label>
+                <input type="text" id="middleName" name="middleName" [(ngModel)]="middleName">
+            </div>
+            <div class="form-group col-md-4">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" name="lastName" [(ngModel)]="lastName" required>
+            </div>
+        </div>
+
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="contact">Contact Number</label>
+                <input type="text" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    id="contact" name="contact" [(ngModel)]="contact" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" [(ngModel)]="email" required>
+            </div>
+        </div>
+
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="dateOfJoining">Date of Joining</label>
+                <input type="date" id="dateOfJoining" name="dateOfJoining"
+                    [(ngModel)]="dateOfJoining" [max]="today" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="employmentType">Employment Type</label>
+                <select id="employmentType" name="employmentType" [(ngModel)]="employmentType" required>
+                    <option value="" selected disabled>Select Type</option>
+                    <option value="full-time">Full-time</option>
+                    <option value="intern">Intern</option>
+                    <option value="contract">Contract</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="status">Status</label>
+                <select id="status" name="status" [(ngModel)]="empStatus" required>
+                    <option value="" selected disabled>Select Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="hold">Hold</option>
+                </select>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="department">Department</label>
+                <input type="text" id="department" name="department" [(ngModel)]="department" required>
+            </div>
+        </div>
+
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="designation">Designation</label>
+                <input type="text" id="designation" name="designation" [(ngModel)]="designation" autocomplete="off" data-lpignore="true" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="country">Country</label>
+                <select id="country" name="country" [(ngModel)]="country" required>
+                    <option value="">Select Country</option>
+                    @for(countryOption of countries; track $index) {
+                    <option>{{ countryOption }}</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        @if (!isEditMode) {
+        <div class="form-row col-2">
+            <div class="form-group col-md-6">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" [(ngModel)]="password" autocomplete="new-password" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword"
+                    [(ngModel)]="confirmPassword" autocomplete="new-password" required>
+            </div>
+        </div>
+        }
+
+        <button type="submit" class="submit-button">
+            <i class="fa-solid {{ isEditMode ? 'fa-floppy-disk' : 'fa-user-plus' }}"></i>
+            {{ isEditMode ? 'Update User' : 'Create User' }}
+        </button>
+    </form>
+</div>
+}
+
+@if (action==='managerole') {
+<div class="manage-roles-container">
+    <div class="back-link" routerLink="/dashboard">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </div>
+    <h2 class="page-title">Manage User <span>Roles</span></h2>
+
+    <div class="search-bar">
+        <input type="text" placeholder="Search users..." [(ngModel)]="searchTerm" (input)="filterUsers()">
+    </div>
+
+    <table class="roles-table">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Current Role</th>
+                <th>Change Role</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(user of filteredUsers; track user.userId) {
+            <tr>
+                <td>{{ user.userId }}</td>
+                <td>{{ user.firstName }} {{ user.lastName }}</td>
+                <td>{{ user.email }}</td>
+                <td><span class="role-badge" [class]="user.role.toLowerCase()">{{ user.role }}</span></td>
+                <td>
+                    <select [(ngModel)]="user.newRole" [name]="'role-' + user.userId" [disabled]="user.role==='admin'">
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="employee">Employee</option>
+                        <option value="manager">Manager</option>
+                    </select>
+                </td>
+                <td>
+                    <button class="update-btn" (click)="updateRole(user)"
+                        [disabled]="user.role === user.newRole || user.role === 'admin'">
+                        <i class="fa-solid fa-check"></i> Update
+                    </button>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination-container">
+        <button (click)="prev()" [disabled]="page === 1">
+            <i class="fa-solid fa-chevron-left"></i> Prev
+        </button>
+        <span>Page {{page}}</span>
+        <button (click)="next()" [disabled]="page === totalPages">
+            Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+}
+
+@if (action==='deactive') {
+<div class="deactivate-container">
+    <div class="back-link" routerLink="/dashboard">
+        <i class="fa-solid fa-arrow-left"></i> Back to Dashboard
+    </div>
+    <h2 class="page-title">Deactivate / <span>Activate Users</span></h2>
+
+    <div class="search-bar">
+        <input type="text" placeholder="Search users..." [(ngModel)]="deactivateSearchTerm"
+            (input)="filterDeactivateUsers()">
+    </div>
+
+    <table class="deactivate-table">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for(user of filteredDeactivateUsers; track user.userId) {
+            <tr [class.inactive-row]="user.empStatus?.toLowerCase() === 'inactive'">
+                <td>{{ user.userId }}</td>
+                <td>{{ user.firstName }} {{ user.lastName }}</td>
+                <td>{{ user.email }}</td>
+                <td><span class="role-badge" [class]="user.role?.toLowerCase()">{{ user.role }}</span></td>
+                <td><span class="status-badge" [class]="user.empStatus?.toLowerCase()">{{ user.empStatus | uppercase }}</span></td>
+                <td class="action-buttons">
+                    @if(user.empStatus?.toLowerCase() === 'active') {
+                    <button class="deactivate-btn" (click)="deactivateUser(user)">
+                        <i class="fa-solid fa-user-xmark"></i> Deactivate
+                    </button>
+                    <button class="hold-btn" (click)="holdUser(user)">
+                        <i class="fa-solid fa-pause"></i> Hold
+                    </button>
+                    }
+                    @if(user.empStatus?.toLowerCase() === 'inactive' || user.empStatus?.toLowerCase() === 'hold') {
+                    <button class="activate-btn" (click)="activateUser(user)">
+                        <i class="fa-solid fa-user-check"></i> Activate
+                    </button>
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination-container">
+        <button (click)="prev()" [disabled]="page === 1">
+            <i class="fa-solid fa-chevron-left"></i> Prev
+        </button>
+        <span>Page {{page}}</span>
+        <button (click)="next()" [disabled]="page === totalPages">
+            Next <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+}
+
+<ng-template #content let-modal>
+    <div class="modal-header">
+        <h4 class="modal-title" id="modal-basic-title">
+            <i class="fa-solid fa-circle-check" style="color: var(--color-success); margin-right: 0.5rem;"></i>
+            Success
+        </h4>
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <p>{{ popupMessage }}</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn-ghost btn" (click)="modal.close('Save click')">OK</button>
+    </div>
+</ng-template>

@@ -1,0 +1,262 @@
+<div class="tasks-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fas fa-tasks"></i> Tasks</h1>
+      <p>Track and manage all tasks across projects</p>
+    </div>
+    <button class="create-btn" (click)="openCreateModal()">
+      <i class="fas fa-plus"></i> New Task
+    </button>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="fas fa-clipboard-list"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalTasks }}</span>
+        <span class="stat-label">Total Tasks</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon gray"><i class="fas fa-clock"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ todoTasks }}</span>
+        <span class="stat-label">To Do</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fas fa-spinner"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inProgressTasks }}</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completedTasks }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search tasks..." [(ngModel)]="searchTerm" (input)="filterTasks()">
+    </div>
+    <div class="filter-dropdowns">
+      <select [(ngModel)]="projectFilter" (change)="filterTasks()">
+        <option value="all">All Projects</option>
+        @for(project of projects; track project._id) {
+        <option [value]="project._id">{{ project.projectName || project.name }}</option>
+        }
+      </select>
+      <select [(ngModel)]="employeeFilter" (change)="filterTasks()">
+        <option value="all">All Employees</option>
+        @for(emp of employees; track emp._id) {
+        <option [value]="emp._id">{{ emp.firstName }} {{ emp.lastName }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="kanban-board">
+    <!-- To Do Column -->
+    <div class="kanban-column">
+      <div class="column-header todo">
+        <h3><i class="fas fa-clock"></i> To Do</h3>
+        <span class="task-count">{{ getTasksByStatus('To Do').length }}</span>
+      </div>
+      <div class="column-body">
+        @for(task of getTasksByStatus('To Do'); track task._id) {
+        <div class="task-card">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ getProjectName(task.projectId) }}</span>
+          </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ task.description }}</p>
+          <div class="task-meta">
+            <div class="assignee">
+              <div class="avatar">{{ getEmployeeName(task.assignedTo).charAt(0) }}</div>
+              <span>{{ getEmployeeName(task.assignedTo) }}</span>
+            </div>
+            <span class="due-date"><i class="fas fa-calendar"></i> {{ task.dueDate | date }}</span>
+          </div>
+          <div class="task-actions">
+            <button class="move-btn" (click)="updateStatus(task, 'In Progress')" title="Move to In Progress">
+              <i class="fas fa-arrow-right"></i>
+            </button>
+            <button class="edit-btn" (click)="openEditModal(task)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn" (click)="deleteTask(task)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('To Do').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
+      </div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="kanban-column">
+      <div class="column-header progress">
+        <h3><i class="fas fa-spinner"></i> In Progress</h3>
+        <span class="task-count">{{ getTasksByStatus('In Progress').length }}</span>
+      </div>
+      <div class="column-body">
+        @for(task of getTasksByStatus('In Progress'); track task._id) {
+        <div class="task-card">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ getProjectName(task.projectId) }}</span>
+          </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ task.description }}</p>
+          <div class="task-meta">
+            <div class="assignee">
+              <div class="avatar">{{ getEmployeeName(task.assignedTo).charAt(0) }}</div>
+              <span>{{ getEmployeeName(task.assignedTo) }}</span>
+            </div>
+            <span class="due-date"><i class="fas fa-calendar"></i> {{ task.dueDate | date }}</span>
+          </div>
+          <div class="task-actions">
+            <button class="move-btn back" (click)="updateStatus(task, 'To Do')" title="Move to To Do">
+              <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="move-btn" (click)="updateStatus(task, 'Completed')" title="Mark Complete">
+              <i class="fas fa-check"></i>
+            </button>
+            <button class="edit-btn" (click)="openEditModal(task)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn" (click)="deleteTask(task)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('In Progress').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
+      </div>
+    </div>
+
+    <!-- Completed Column -->
+    <div class="kanban-column">
+      <div class="column-header completed">
+        <h3><i class="fas fa-check-circle"></i> Completed</h3>
+        <span class="task-count">{{ getTasksByStatus('Completed').length }}</span>
+      </div>
+      <div class="column-body">
+        @for(task of getTasksByStatus('Completed'); track task._id) {
+        <div class="task-card completed">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ getProjectName(task.projectId) }}</span>
+          </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ task.description }}</p>
+          <div class="task-meta">
+            <div class="assignee">
+              <div class="avatar">{{ getEmployeeName(task.assignedTo).charAt(0) }}</div>
+              <span>{{ getEmployeeName(task.assignedTo) }}</span>
+            </div>
+            <span class="due-date"><i class="fas fa-calendar"></i> {{ task.dueDate | date }}</span>
+          </div>
+          <div class="task-actions">
+            <button class="move-btn back" (click)="updateStatus(task, 'In Progress')" title="Reopen">
+              <i class="fas fa-undo"></i>
+            </button>
+            <button class="delete-btn" (click)="deleteTask(task)" title="Delete">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('Completed').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  @if(showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ isEditing ? 'Edit Task' : 'Create New Task' }}</h3>
+        <button class="close-btn" (click)="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Task Title:</label>
+          <input type="text" [(ngModel)]="currentTask.title" placeholder="Enter task title" required>
+        </div>
+        <div class="form-group">
+          <label>Description:</label>
+          <textarea [(ngModel)]="currentTask.description" placeholder="Enter task description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Project:</label>
+            <select [(ngModel)]="currentTask.projectId" (ngModelChange)="currentTask.assignedTo = null" required>
+              <option [ngValue]="null">-- Select Project --</option>
+              @for(project of projects; track project._id) {
+              <option [ngValue]="project._id">{{ project.projectName || project.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Assign To:</label>
+            <select [(ngModel)]="currentTask.assignedTo" [disabled]="!currentTask.projectId" required>
+              <option [ngValue]="null">-- Select Employee --</option>
+              @for(emp of getAvailableAssignees(); track emp._id) {
+              <option [ngValue]="emp._id">{{ emp.firstName }} {{ emp.lastName }} ({{ emp.designation || 'Employee' }})</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Status:</label>
+            <select [(ngModel)]="currentTask.status">
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Priority:</label>
+            <select [(ngModel)]="currentTask.priority">
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Due Date:</label>
+          <input type="date" [(ngModel)]="currentTask.dueDate" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="cancel-btn" (click)="closeModal()">Cancel</button>
+        <button class="save-btn" (click)="saveTask()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

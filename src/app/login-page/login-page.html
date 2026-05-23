@@ -1,0 +1,181 @@
+<div class="login-container">
+
+  <!-- Left: Brand Panel -->
+  <div class="image-section">
+    <div class="brand-badge">
+      <i class="fa-solid fa-bolt"></i>
+      <span>TaskFlow Pro</span>
+    </div>
+
+    <div class="login-hero">
+      <h2>Command Your<br><em>Workflow</em></h2>
+      <p>The precision task management platform built for high-performance teams. Ship faster, collaborate smarter.</p>
+    </div>
+
+    <div class="feature-pills">
+      <span class="pill"><i class="fa-solid fa-shield-halved"></i> Role-Based Access</span>
+      <span class="pill"><i class="fa-solid fa-chart-line"></i> Live Analytics</span>
+      <span class="pill"><i class="fa-solid fa-users"></i> Team Sync</span>
+      <span class="pill"><i class="fa-solid fa-layer-group"></i> Project Boards</span>
+    </div>
+
+    <div class="floating-stats">
+      <div class="stat-bubble">
+        <span class="num">99.9%</span>
+        <span class="lbl">Uptime</span>
+      </div>
+      <div class="stat-bubble">
+        <span class="num">3x</span>
+        <span class="lbl">Faster</span>
+      </div>
+      <div class="stat-bubble">
+        <span class="num">∞</span>
+        <span class="lbl">Scale</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Login Form -->
+  <div class="login-section">
+    <div class="login-card">
+      @if(viewState === 'login') {
+      <div class="login-card-header">
+        <h2>Welcome <span>back.</span></h2>
+        <p>Sign in to your command centre</p>
+      </div>
+
+      <div class="input-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" placeholder="you@company.com" [(ngModel)]="email" autocomplete="off" data-lpignore="true">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" placeholder="••••••••" [(ngModel)]="password" autocomplete="new-password" data-lpignore="true">
+        </div>
+      </div>
+
+      @if(errorMessage) {
+        <div class="error-message">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
+
+      @if(successMessage) {
+        <div class="success-message">
+          <i class="fa-solid fa-check-circle"></i> {{ successMessage }}
+        </div>
+      }
+
+      <button class="login-button" (click)="login()" [disabled]="isLoading">
+        @if(isLoading) {
+          <i class="fa-solid fa-spinner fa-spin"></i> Logging in...
+        } @else {
+          Sign In &nbsp;<i class="fa-solid fa-arrow-right"></i>
+        }
+      </button>
+
+      <a (click)="setView('forgot')" class="forgot-password" style="cursor: pointer;">Forgot your password?</a>
+      }
+
+      @if(viewState === 'forgot') {
+      <div class="login-card-header">
+        <h2>Forgot <span>Password?</span></h2>
+        <p>Enter your email to receive an OTP</p>
+      </div>
+
+      <div class="input-group">
+        <label>Email Address</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" placeholder="you@company.com" [(ngModel)]="forgotEmail">
+        </div>
+      </div>
+
+      @if(errorMessage) {
+        <div class="error-message">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
+
+      <button class="login-button" (click)="sendOtp()" [disabled]="isLoading">
+        @if(isLoading) {
+          <i class="fa-solid fa-spinner fa-spin"></i> Sending...
+        } @else {
+          Send OTP &nbsp;<i class="fa-solid fa-paper-plane"></i>
+        }
+      </button>
+
+      <a (click)="setView('login')" class="forgot-password" style="cursor: pointer;"><i class="fa-solid fa-arrow-left"></i> Back to Login</a>
+      }
+
+      @if(viewState === 'verify') {
+      <div class="login-card-header">
+        <h2>Enter <span>OTP</span></h2>
+        <p>We've sent a code to your email</p>
+      </div>
+
+      <div class="input-group">
+        <label>6-Digit OTP</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-key"></i>
+          <input type="text" placeholder="------" [(ngModel)]="otp" maxlength="6">
+        </div>
+      </div>
+
+      @if(errorMessage) {
+        <div class="error-message">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
+      @if(successMessage) {
+        <div class="success-message">
+          <i class="fa-solid fa-check-circle"></i> {{ successMessage }}
+        </div>
+      }
+
+      <button class="login-button" (click)="verifyOtp()" [disabled]="isLoading">
+        Verify OTP &nbsp;<i class="fa-solid fa-check"></i>
+      </button>
+
+      <a (click)="setView('forgot')" class="forgot-password" style="cursor: pointer;">Didn't receive it? Try again</a>
+      }
+
+      @if(viewState === 'reset') {
+      <div class="login-card-header">
+        <h2>New <span>Password</span></h2>
+        <p>Create a strong password</p>
+      </div>
+
+      <div class="input-group">
+        <label>New Password</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" placeholder="••••••••" [(ngModel)]="newPassword">
+        </div>
+      </div>
+
+      @if(errorMessage) {
+        <div class="error-message">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ errorMessage }}
+        </div>
+      }
+
+      <button class="login-button" (click)="resetPassword()" [disabled]="isLoading">
+        @if(isLoading) {
+          <i class="fa-solid fa-spinner fa-spin"></i> Updating...
+        } @else {
+          Reset Password &nbsp;<i class="fa-solid fa-floppy-disk"></i>
+        }
+      </button>
+      }
+    </div>
+  </div>
+
+</div>
+<router-outlet/>

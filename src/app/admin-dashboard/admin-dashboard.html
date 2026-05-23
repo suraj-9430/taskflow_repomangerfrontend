@@ -1,0 +1,211 @@
+<div class="admin-dashboard">
+
+  <!-- Page Header -->
+  <div class="header">
+    <h1>Admin <span>Dashboard</span></h1>
+
+    <div class="header-right">
+      <div class="notification-wrapper">
+        <i class="fa-solid fa-bell notification-icon"></i>
+        <span class="badge">3</span>
+      </div>
+      <span>Admin</span>
+      <img src="adminimage.png" alt="Admin Avatar" class="avatar">
+    </div>
+  </div>
+
+  <!-- Metric Widgets -->
+  <div class="widgets">
+    <div class="widget-card">
+      <div class="icon-bg blue">
+        <i class="fa-solid fa-users"></i>
+      </div>
+      <div class="widget-content">
+        <p>Total Users</p>
+        <h3>{{totaluser}}</h3>
+      </div>
+    </div>
+
+    <div class="widget-card">
+      <div class="icon-bg lightblue">
+        <i class="fa-solid fa-user-shield"></i>
+      </div>
+      <div class="widget-content">
+        <p>Total Admins</p>
+        <h3>{{totaladmin}}</h3>
+      </div>
+    </div>
+
+    <div class="widget-card">
+      <div class="icon-bg green">
+        <i class="fa-solid fa-user-tie"></i>
+      </div>
+      <div class="widget-content">
+        <p>Total Managers</p>
+        <h3>{{totalmanager}}</h3>
+      </div>
+    </div>
+
+    <div class="widget-card">
+      <div class="icon-bg grey">
+        <i class="fa-solid fa-user-plus"></i>
+      </div>
+      <div class="widget-content">
+        <p>Total Employees</p>
+        <h3>{{totalemployee}}</h3>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts & Shortcuts -->
+  <div class="charts-and-shortcuts">
+    <!-- Donut Chart -->
+    <div class="chart-card">
+      <h2>User Role Distribution</h2>
+      <div class="chart-container">
+        <svg class="donut-chart" viewBox="0 0 200 200">
+          <!-- Background circle -->
+          <circle class="donut-background" cx="100" cy="100" r="80"
+            fill="none" stroke="hsl(220,12%,22%)" stroke-width="38"/>
+
+          <!-- Admin segment -->
+          <circle class="donut-segment admin-segment" cx="100" cy="100" r="80"
+            fill="none" stroke="url(#grad-amber)"
+            stroke-width="38" stroke-dasharray="100.53 402.12" stroke-dashoffset="0"
+            transform="rotate(-90 100 100)"/>
+
+          <!-- Manager segment -->
+          <circle class="donut-segment manager-segment" cx="100" cy="100" r="80"
+            fill="none" stroke="url(#grad-success)"
+            stroke-width="38" stroke-dasharray="150.80 351.85" stroke-dashoffset="-100.53"
+            transform="rotate(-90 100 100)"/>
+
+          <!-- Employee segment -->
+          <circle class="donut-segment employee-segment" cx="100" cy="100" r="80"
+            fill="none" stroke="url(#grad-info)"
+            stroke-width="38" stroke-dasharray="251.33 251.33" stroke-dashoffset="-251.33"
+            transform="rotate(-90 100 100)"/>
+
+          <!-- Center text -->
+          <text x="100" y="93" text-anchor="middle" class="chart-label">TOTAL</text>
+          <text x="100" y="122" text-anchor="middle" class="chart-value">{{totaluser}}</text>
+
+          <defs>
+            <linearGradient id="grad-amber" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:hsl(43,96%,56%)"/>
+              <stop offset="100%" style="stop-color:hsl(32,95%,44%)"/>
+            </linearGradient>
+            <linearGradient id="grad-success" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:hsl(157,69%,45%)"/>
+              <stop offset="100%" style="stop-color:hsl(171,77%,43%)"/>
+            </linearGradient>
+            <linearGradient id="grad-info" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:hsl(207,90%,60%)"/>
+              <stop offset="100%" style="stop-color:hsl(225,75%,65%)"/>
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <div class="chart-stats">
+          <div class="stat-item">
+            <span class="stat-color blue"></span>
+            <span class="stat-label">Admins</span>
+            <span class="stat-value">{{(totaladmin/totaluser)*100 | number: '1.0-1'}}%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-color green"></span>
+            <span class="stat-label">Managers</span>
+            <span class="stat-value">{{(totalmanager/totaluser)*100 | number: '1.0-1'}}%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-color orange"></span>
+            <span class="stat-label">Employees</span>
+            <span class="stat-value">{{(totalemployee/totaluser)*100 | number: '1.0-1'}}%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><span class="color-box blue"></span> {{totaladmin}} Admins</span>
+        <span class="legend-item"><span class="color-box green"></span> {{totalmanager}} Managers</span>
+        <span class="legend-item"><span class="color-box orange"></span> {{totalemployee}} Employees</span>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <div class="small-widget-card">
+        <h3>Active Users</h3>
+        <p>{{totalactive}}</p>
+      </div>
+
+      <div class="shortcuts-card">
+        <h2>Quick Actions</h2>
+        <div class="shortcut-grid">
+          <div class="shortcut-item" (click)="handleaction('create')">
+            <div class="icon-bg blue"><i class="fa-solid fa-user-plus"></i></div>
+            <span>Create User</span>
+          </div>
+          <div class="shortcut-item" (click)="handleaction('managerole')">
+            <div class="icon-bg green"><i class="fa-solid fa-user-gear"></i></div>
+            <span>Manage Roles</span>
+          </div>
+          <div class="shortcut-item" (click)="handleaction('deactive')">
+            <div class="icon-bg orange"><i class="fa-solid fa-user-xmark"></i></div>
+            <span>Deactivate</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity Table -->
+  <div class="recent-activity">
+    <h2>Recent User Activity</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Joined</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(user of recentUsers; track user.id) {
+        <tr>
+          <td>{{ user.firstName + ' ' + user.lastName }}</td>
+          <td>{{ user.role }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ user.dateOfJoining | date: 'dd MMM yyyy' }}</td>
+          <td>
+            <span class="status-tag" [ngClass]="{
+              'active':   user.empStatus === 'active',
+              'on-hold':  user.empStatus === 'hold',
+              'inactive': user.empStatus === 'inactive'
+            }">{{ user.empStatus }}</span>
+          </td>
+          <td>
+            <button class="action-btn" title="Edit" (click)="editUser(user)">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="pagination-container">
+      <button (click)="prev()" [disabled]="page === 1">
+        <i class="fa-solid fa-chevron-left"></i> Prev
+      </button>
+      <span>Page {{page}} of {{totalPages}}</span>
+      <button (click)="next()" [disabled]="page === totalPages">
+        Next <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+
+</div>

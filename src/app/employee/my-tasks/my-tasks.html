@@ -1,0 +1,107 @@
+<div class="my-tasks-page">
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fas fa-tasks"></i> My Tasks</h1>
+      <p>View and manage all your assigned tasks</p>
+    </div>
+  </div>
+
+  <!-- Statistics -->
+  <div class="stats-row">
+    <div class="stat-card" (click)="setStatusFilter('all')" [class.active]="statusFilter === 'all'">
+      <div class="stat-icon blue"><i class="fas fa-clipboard-list"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalTasks }}</span>
+        <span class="stat-label">Total Tasks</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('To Do')" [class.active]="statusFilter === 'To Do'">
+      <div class="stat-icon gray"><i class="fas fa-clock"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ todoTasks }}</span>
+        <span class="stat-label">To Do</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('In Progress')" [class.active]="statusFilter === 'In Progress'">
+      <div class="stat-icon orange"><i class="fas fa-spinner"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inProgressTasks }}</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+    </div>
+    <div class="stat-card" (click)="setStatusFilter('Completed')" [class.active]="statusFilter === 'Completed'">
+      <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completedTasks }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" placeholder="Search tasks..." [(ngModel)]="searchTerm" (input)="filterTasks()">
+    </div>
+    <div class="filter-dropdowns">
+      <select [(ngModel)]="priorityFilter" (change)="filterTasks()">
+        <option value="all">All Priorities</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Tasks List -->
+  <div class="tasks-container">
+    @for(task of filteredTasks; track task.id) {
+    <div class="task-card" [class.completed]="task.status === 'Completed'" [class.overdue]="isOverdue(task.dueDate, task.status)">
+      <div class="task-priority-bar" [ngClass]="getPriorityClass(task.priority)"></div>
+      
+      <div class="task-content">
+        <div class="task-top">
+          <span class="project-tag">{{ task.projectName }}</span>
+          <span class="priority-badge" [ngClass]="getPriorityClass(task.priority)">{{ task.priority }}</span>
+          @if(isOverdue(task.dueDate, task.status)) {
+          <span class="overdue-badge"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
+          }
+        </div>
+        
+        <h3 class="task-title">{{ task.title }}</h3>
+        <p class="task-description">{{ task.description }}</p>
+        
+        <div class="task-footer">
+          <div class="task-dates">
+            <span class="due-date" [class.overdue]="isOverdue(task.dueDate, task.status)">
+              <i class="fas fa-calendar-alt"></i> Due: {{ task.dueDate }}
+            </span>
+            <span class="created-date">
+              <i class="fas fa-clock"></i> Created: {{ task.createdDate }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-status-section">
+        <label>Update Status:</label>
+        <select class="status-select" [ngClass]="getStatusClass(task.status)" [(ngModel)]="task.status" (change)="onStatusChange(task)">
+          <option value="To Do">To Do</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+    }
+    
+    @if(filteredTasks.length === 0) {
+    <div class="empty-state">
+      <i class="fas fa-clipboard-check"></i>
+      <h3>No tasks found</h3>
+      <p>Try adjusting your search or filter criteria</p>
+    </div>
+    }
+  </div>
+</div>

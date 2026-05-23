@@ -1,0 +1,187 @@
+<div class="employee-dashboard">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Welcome back, <span>{{ currentEmployee.name }}</span>!</h1>
+      <p>Here's your work overview for today</p>
+    </div>
+    <div class="header-right">
+      <div class="notification-wrapper">
+        <i class="fa-solid fa-bell notification-icon"></i>
+        <span class="badge">3</span>
+      </div>
+      <div class="profile-mini">
+        <div class="avatar">{{ currentEmployee.avatar }}</div>
+        <span>{{ currentEmployee.name }}</span>
+      </div>
+      <button class="logout-btn" (click)="logout()">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="fa-solid fa-clipboard-list"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ totalTasks }}</span>
+        <span class="stat-label">Total Tasks</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon gray"><i class="fa-solid fa-clock"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ todoTasks }}</span>
+        <span class="stat-label">To Do</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fa-solid fa-rotate"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inProgressTasks }}</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completedTasks }}</span>
+        <span class="stat-label">Completed</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple"><i class="fa-solid fa-percent"></i></div>
+      <div class="stat-info">
+        <span class="stat-value">{{ completionRate }}%</span>
+        <span class="stat-label">Completion Rate</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- My Projects -->
+    <div class="section projects-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-diagram-project"></i> My Projects ({{ totalProjects }})</h2>
+      </div>
+      <div class="projects-list">
+        @for(project of myProjects; track project._id) {
+        <div class="project-card">
+          <div class="project-header">
+            <h3>{{ project.projectName || project.name }}</h3>
+            <span class="status-badge" [ngClass]="getStatusClass(project.status)">{{ project.status || 'Active' }}</span>
+          </div>
+          <div class="project-details">
+            <div class="detail">
+              <i class="fa-solid fa-calendar-alt"></i>
+              <span>Due: {{ project.deadline | date }}</span>
+            </div>
+            <div class="detail">
+              <i class="fa-solid fa-list-check"></i>
+              <span>{{ getProjectTasksCount(project._id) }} tasks assigned</span>
+            </div>
+          </div>
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Progress</span>
+              <span>{{ project.progress }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill"
+                [style.width.%]="project.progress"
+                [style.background-color]="getProgressColor(project.progress)"></div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- My Tasks -->
+    <div class="section tasks-section">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-list-check"></i> My Tasks</h2>
+        <div class="view-toggle">
+          <button [class.active]="statusFilter === 'all'" (click)="filterTasks('all')">All ({{ totalTasks }})</button>
+          <button [class.active]="statusFilter === 'To Do'" (click)="filterTasks('To Do')">To Do</button>
+          <button [class.active]="statusFilter === 'In Progress'" (click)="filterTasks('In Progress')">In Progress</button>
+          <button [class.active]="statusFilter === 'Completed'" (click)="filterTasks('Completed')">Done</button>
+        </div>
+      </div>
+
+      <div class="tasks-list">
+        @for(task of filteredTasks; track task._id) {
+        <div class="task-row"
+          [class.completed]="task.status === 'Completed'"
+          [class.overdue]="isOverdue(task.dueDate) && task.status !== 'Completed'"
+          [ngClass]="getPriorityClass(task.priority)">
+
+          <div class="task-main">
+            <div class="task-top">
+              <span class="task-project-tag">{{ getProjectName(task.projectId) }}</span>
+              <span class="task-priority-badge" [ngClass]="getPriorityClass(task.priority)">{{ task.priority }}</span>
+            </div>
+            <h4 class="task-title">{{ task.title }}</h4>
+            <p class="task-description">{{ task.description }}</p>
+            <div class="task-meta">
+              <span class="task-due" [class.overdue]="isOverdue(task.dueDate) && task.status !== 'Completed'">
+                <i class="fa-solid fa-calendar-alt"></i> Due: {{ task.dueDate | date }}
+              </span>
+              <span class="task-created">
+                <i class="fa-solid fa-clock"></i> Created: {{ task.createdAt | date }}
+              </span>
+            </div>
+          </div>
+
+          <div class="task-status-section">
+            <label>Status</label>
+            <select class="status-select" [ngClass]="getStatusClass(task.status)"
+              [(ngModel)]="task.status" (change)="onStatusChange(task)">
+              <option value="To Do">To Do</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+        </div>
+        }
+
+        @if(filteredTasks.length === 0) {
+        <div class="empty-state">
+          <i class="fa-solid fa-clipboard-check"></i>
+          <p>No tasks found</p>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Card -->
+  <div class="profile-card">
+    <div class="profile-header">
+      <div class="profile-avatar">{{ currentEmployee.avatar }}</div>
+      <div class="profile-info">
+        <h3>{{ currentEmployee.name }}</h3>
+        <span class="role">{{ currentEmployee.role }}</span>
+      </div>
+    </div>
+    <div class="profile-details">
+      <div class="detail-item">
+        <i class="fa-solid fa-envelope"></i>
+        <span>{{ currentEmployee.email }}</span>
+      </div>
+      <div class="detail-item">
+        <i class="fa-solid fa-building"></i>
+        <span>{{ currentEmployee.department }}</span>
+      </div>
+      <div class="detail-item">
+        <i class="fa-solid fa-phone"></i>
+        <span>{{ currentEmployee.phone }}</span>
+      </div>
+      <div class="detail-item">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Joined: {{ currentEmployee.joinDate | date }}</span>
+      </div>
+    </div>
+  </div>
+</div>
