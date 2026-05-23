@@ -3,6 +3,7 @@ import { Router, RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login-page',
@@ -39,7 +40,7 @@ export class LoginPage {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.post('https://taskflow-repomanger.onrender.com/api/users/login', {
+    this.http.post(`${environment.apiUrl}/users/login`, {
       email: this.email,
       password: this.password
     }, { withCredentials:false }).subscribe({
@@ -94,7 +95,7 @@ export class LoginPage {
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.http.post('https://taskflow-repomanger.onrender.com/api/users/forgot-password', {
+    this.http.post(`${environment.apiUrl}/users/forgot-password`, {
       email: this.forgotEmail
     }).subscribe({
       next: (res: any) => {
@@ -130,7 +131,7 @@ export class LoginPage {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.post('https://taskflow-repomanger.onrender.com/api/users/reset-password', {
+    this.http.post(`${environment.apiUrl}/users/reset-password`, {
       email: this.forgotEmail,
       otp: this.otp,
       newPassword: this.newPassword

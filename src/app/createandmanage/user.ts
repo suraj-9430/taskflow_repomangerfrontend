@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -9,38 +10,38 @@ export class UserService {
 
   }
   createuser(user: any) {
-    return this.http.post('https://taskflow-repomanger.onrender.com/api/users', user);
+    return this.http.post(`${environment.apiUrl}/users`, user);
   }
   
   updateRole(userId: string, role: string) {
-    return this.http.put(`https://taskflow-repomanger.onrender.com/api/users/${userId}`, { role });
+    return this.http.put(`${environment.apiUrl}/users/${userId}`, { role });
   }
 
   updateStatus(userId: string, empStatus: string) {
-    return this.http.put(`https://taskflow-repomanger.onrender.com/api/users/${userId}`, { empStatus });
+    return this.http.put(`${environment.apiUrl}/users/${userId}`, { empStatus });
   }
 
   // private deleteuser(user:any){
-  //   return this.http.delete('https://taskflow-repomanger.onrender.com/users',user);
+  //   return this.http.delete(`${environment.apiUrl}/users`,user);
   // }
 
   fetchUsers(page: number) {
-    return this.http.get(`https://taskflow-repomanger.onrender.com/api/users/fetchuserlimit?page=${page}&limit=5`);
+    return this.http.get(`${environment.apiUrl}/users/fetchuserlimit?page=${page}&limit=5`);
   }
 
   countuser(role:string){
-    return this.http.get(`https://taskflow-repomanger.onrender.com/api/users/countuserbyrole?role=${role}`);
+    return this.http.get(`${environment.apiUrl}/users/countuserbyrole?role=${role}`);
   }
   
   countactivveusers(){
-    return this.http.get('https://taskflow-repomanger.onrender.com/api/users/countactiveusers?empStatus=active');
+    return this.http.get(`${environment.apiUrl}/users/countactiveusers?empStatus=active`);
   }   
 
   // getuser() {
-  //   return this.http.get('https://taskflow-repomanger.onrender.com/api/users');
+  //   return this.http.get(`${environment.apiUrl}/users`);
   // }
   getuserbyid(id: number) {
-    return this.http.get('https://taskflow-repomanger.onrender.com/api/users/' + id);
+    return this.http.get(`${environment.apiUrl}/users/` + id);
   }
 
 }

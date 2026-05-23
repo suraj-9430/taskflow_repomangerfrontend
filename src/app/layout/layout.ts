@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule, NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import { UserPreferences } from 'typescript';
 import { UserService } from '../createandmanage/user';
 
@@ -40,7 +41,7 @@ export class Layout implements OnInit {
   }
 
   logout(): void {
-    this.http.post('https://taskflow-repomanger.onrender.com/api/users/logout', {}, { withCredentials: true }).subscribe({
+    this.http.post(`${environment.apiUrl}/users/logout`, {}, { withCredentials: true }).subscribe({
       next: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
