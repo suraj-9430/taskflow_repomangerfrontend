@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Projectservice } from '../manager/projects/projectservice';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-manager-dashboard',
@@ -11,10 +13,16 @@ import { Projectservice } from '../manager/projects/projectservice';
   styleUrl: './manager-dashboard.css',
 })
 export class ManagerDashboard implements OnInit {
-  constructor(private router: Router, private projectservice: Projectservice) {}
+  constructor(
+    private router: Router, 
+    private projectservice: Projectservice,
+    private http: HttpClient
+  ) {}
 
   // Manager Info
   managerName: string = 'Manager';
+  managerAvatar: string = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+  unreadCount: number = 0;
 
   // Real Data
   employees: any[] = [];
@@ -28,7 +36,42 @@ export class ManagerDashboard implements OnInit {
     if (user.firstName) {
       this.managerName = `${user.firstName} ${user.lastName}`;
     }
+    if (user.avatar) {
+      this.managerAvatar = user.avatar;
+    }
+    this.loadManagerProfile();
+    this.loadUnreadCount();
     this.loadData();
+  }
+
+  loadManagerProfile(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const user = res.data;
+          this.managerName = `${user.firstName} ${user.lastName}`;
+          if (user.avatar) {
+            this.managerAvatar = user.avatar;
+          }
+        }
+      },
+      error: (err) => console.error('Error fetching manager profile', err)
+    });
+  }
+
+  loadUnreadCount(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/notifications`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.unreadCount = res.data.filter((n: any) => !n.isRead).length;
+        }
+      },
+      error: (err) => console.error('Error fetching unread count', err)
+    });
   }
 
   loadData(): void {

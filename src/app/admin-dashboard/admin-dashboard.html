@@ -5,12 +5,14 @@
     <h1>Admin <span>Dashboard</span></h1>
 
     <div class="header-right">
-      <div class="notification-wrapper">
+      <div class="notification-wrapper" routerLink="/dashboard/notifications" style="cursor: pointer;">
         <i class="fa-solid fa-bell notification-icon"></i>
-        <span class="badge">3</span>
+        @if (unreadCount > 0) {
+          <span class="badge">{{ unreadCount }}</span>
+        }
       </div>
-      <span>Admin</span>
-      <img src="adminimage.png" alt="Admin Avatar" class="avatar">
+      <span routerLink="/dashboard/settings" style="cursor: pointer;">{{ adminName }}</span>
+      <img [src]="adminAvatar" alt="Admin Avatar" class="avatar" routerLink="/dashboard/settings" style="cursor: pointer;">
     </div>
   </div>
 

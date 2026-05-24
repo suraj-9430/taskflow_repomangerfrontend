@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Projectservice } from '../manager/projects/projectservice';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-employee-dashboard',
@@ -12,10 +14,15 @@ import { Projectservice } from '../manager/projects/projectservice';
   styleUrl: './employee-dashboard.css',
 })
 export class EmployeeDashboard implements OnInit {
-  constructor(private router: Router, private projectservice: Projectservice) {}
+  constructor(
+    private router: Router, 
+    private projectservice: Projectservice,
+    private http: HttpClient
+  ) {}
 
-  // Current Employee Info (would come from auth service in real app)
+  // Current Employee Info
   currentEmployee: any = {};
+  unreadCount: number = 0;
 
   // Projects assigned to this employee
   myProjects: any[] = [];
@@ -34,13 +41,49 @@ export class EmployeeDashboard implements OnInit {
       name: `${user.firstName} ${user.lastName}`,
       email: user.email,
       role: user.designation || 'Employee',
-      department: 'Engineering', // Default or fetch if exists
+      department: 'Engineering', 
       phone: user.phone || '+1 234-567-8901',
       joinDate: user.createdAt || new Date().toISOString(),
-      avatar: user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'
+      avatar: user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U',
+      avatarUrl: user.avatar || ''
     };
     
+    this.loadEmployeeProfile();
+    this.loadUnreadCount();
     this.loadData();
+  }
+
+  loadEmployeeProfile(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const user = res.data;
+          this.currentEmployee.name = `${user.firstName} ${user.lastName}`;
+          this.currentEmployee.email = user.email;
+          this.currentEmployee.phone = user.contactNumber || '';
+          this.currentEmployee.role = user.designation || 'Employee';
+          this.currentEmployee.department = user.department || 'Engineering';
+          this.currentEmployee.avatar = user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U';
+          this.currentEmployee.avatarUrl = user.avatar || '';
+        }
+      },
+      error: (err) => console.error('Error fetching employee profile', err)
+    });
+  }
+
+  loadUnreadCount(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/notifications`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.unreadCount = res.data.filter((n: any) => !n.isRead).length;
+        }
+      },
+      error: (err) => console.error('Error fetching unread count', err)
+    });
   }
 
   loadData(): void {

@@ -3,11 +3,13 @@ import { Router, RouterLink } from "@angular/router";
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../createandmanage/user';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
@@ -19,8 +21,26 @@ export class AdminDashboard implements OnInit {
   totalactive!: number
   recentUsers: any[] = []
 
-  constructor(private router: Router, private user: UserService) { }
+  adminName: string = 'Admin';
+  adminAvatar: string = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+  unreadCount: number = 0;
+
+  constructor(
+    private router: Router, 
+    private user: UserService,
+    private http: HttpClient
+  ) { }
+
   ngOnInit(): void {
+    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (localUser.firstName) {
+      this.adminName = `${localUser.firstName} ${localUser.lastName}`;
+    }
+    if (localUser.avatar) {
+      this.adminAvatar = localUser.avatar;
+    }
+    this.loadAdminProfile();
+    this.loadUnreadCount();
     this.loadUsers();
     this.user.countactivveusers().subscribe((res: any) => {
       this.totalactive = res['count'];
@@ -38,6 +58,36 @@ export class AdminDashboard implements OnInit {
       this.totaluser += Number(this.totalemployee);
     });
     
+  }
+
+  loadAdminProfile(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          const user = res.data;
+          this.adminName = `${user.firstName} ${user.lastName}`;
+          if (user.avatar) {
+            this.adminAvatar = user.avatar;
+          }
+        }
+      },
+      error: (err) => console.error('Error fetching admin profile', err)
+    });
+  }
+
+  loadUnreadCount(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/notifications`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.unreadCount = res.data.filter((n: any) => !n.isRead).length;
+        }
+      },
+      error: (err) => console.error('Error fetching unread count', err)
+    });
   }
 
 

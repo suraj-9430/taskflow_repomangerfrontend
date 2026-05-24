@@ -3,12 +3,14 @@
   <div class="header">
     <h1>Manager Dashboard</h1>
     <div class="header-right">
-      <div class="notification-wrapper">
+      <div class="notification-wrapper" routerLink="/manager-dashboard/notifications" style="cursor: pointer;">
         <i class="fa-solid fa-bell notification-icon"></i>
-        <span class="badge">5</span>
+        @if (unreadCount > 0) {
+          <span class="badge">{{ unreadCount }}</span>
+        }
       </div>
-      <span>{{ managerName }}</span>
-      <img src="manager.png" alt="Manager Avatar" class="avatar">
+      <span routerLink="/manager-dashboard/settings" style="cursor: pointer;">{{ managerName }}</span>
+      <img [src]="managerAvatar" alt="Manager Avatar" class="avatar" routerLink="/manager-dashboard/settings" style="cursor: pointer;">
       <button class="logout-btn" (click)="logout()">
         <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
       </button>
