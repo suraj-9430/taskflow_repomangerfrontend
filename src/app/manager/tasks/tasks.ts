@@ -32,6 +32,13 @@ export class Tasks implements OnInit {
   isEditing: boolean = false;
   currentTask: any = this.getEmptyTask();
 
+  // Chat Modal
+  showChatModal: boolean = false;
+  activeChatTask: any = null;
+  chatComments: any[] = [];
+  newMessageText: string = '';
+  isSendingMessage: boolean = false;
+
   ngOnInit(): void {
     this.filteredTasks = [...this.tasks];
     this.loadData();
@@ -244,5 +251,64 @@ export class Tasks implements OnInit {
   // Get tasks by status for Kanban view
   getTasksByStatus(status: string): any[] {
     return this.filteredTasks.filter(t => t.status === status);
+  }
+
+  // Task Discussion / Chat Modal Methods
+  openChatModal(task: any): void {
+    this.activeChatTask = task;
+    this.chatComments = [];
+    this.newMessageText = '';
+    this.showChatModal = true;
+    this.loadChatComments();
+  }
+
+  closeChatModal(): void {
+    this.showChatModal = false;
+    this.activeChatTask = null;
+    this.chatComments = [];
+  }
+
+  loadChatComments(): void {
+    if (!this.activeChatTask) return;
+    this.projectservice.getTaskComments(this.activeChatTask._id).subscribe({
+      next: (res: any) => {
+        this.chatComments = res.data || [];
+        this.scrollToBottom();
+      },
+      error: err => console.error('Error fetching comments', err)
+    });
+  }
+
+  sendChatMessage(): void {
+    if (!this.newMessageText.trim() || !this.activeChatTask || this.isSendingMessage) return;
+    this.isSendingMessage = true;
+    
+    const senderId = this.getLoggedInUserId();
+    const payload = {
+      senderId,
+      content: this.newMessageText
+    };
+
+    this.projectservice.createTaskComment(this.activeChatTask._id, payload).subscribe({
+      next: (res: any) => {
+        this.newMessageText = '';
+        this.isSendingMessage = false;
+        this.chatComments.push(res.data);
+        this.scrollToBottom();
+      },
+      error: err => {
+        console.error('Error sending message', err);
+        this.isSendingMessage = false;
+      }
+    });
+  }
+
+  scrollToBottom(): void {
+    setTimeout(() => {
+      const container = document.getElementById('chat-messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   }
 }

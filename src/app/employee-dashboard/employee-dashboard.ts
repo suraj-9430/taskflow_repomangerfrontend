@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Projectservice } from '../manager/projects/projectservice';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
@@ -9,7 +9,7 @@ import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-employee-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './employee-dashboard.html',
   styleUrl: './employee-dashboard.css',
 })
@@ -33,6 +33,13 @@ export class EmployeeDashboard implements OnInit {
   // Filter
   statusFilter: string = 'all';
   filteredTasks: any[] = [];
+
+  // Chat Modal
+  showChatModal: boolean = false;
+  activeChatTask: any = null;
+  chatComments: any[] = [];
+  newMessageText: string = '';
+  isSendingMessage: boolean = false;
 
   ngOnInit(): void {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -67,6 +74,16 @@ export class EmployeeDashboard implements OnInit {
           this.currentEmployee.department = user.department || 'Engineering';
           this.currentEmployee.avatar = user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U';
           this.currentEmployee.avatarUrl = user.avatar || '';
+
+          // Save loaded user with settings to localStorage
+          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+          localUser.avatar = user.avatar || localUser.avatar;
+          localUser.firstName = user.firstName || localUser.firstName;
+          localUser.lastName = user.lastName || localUser.lastName;
+          if (user.settings) {
+            localUser.settings = user.settings;
+          }
+          localStorage.setItem('user', JSON.stringify(localUser));
         }
       },
       error: (err) => console.error('Error fetching employee profile', err)
@@ -172,7 +189,12 @@ export class EmployeeDashboard implements OnInit {
     
     // Call backend to update status
     this.projectservice.updateTask(task._id, { status: task.status }).subscribe({
-      next: () => console.log(`Task updated to ${task.status}`),
+      next: () => {
+        console.log(`Task updated to ${task.status}`);
+        if (task.status === 'Completed') {
+          this.playSuccessChime();
+        }
+      },
       error: err => console.error('Error updating task status', err)
     });
     console.log(`Task "${task.title}" status changed to: ${task.status}`);
@@ -186,9 +208,56 @@ export class EmployeeDashboard implements OnInit {
       this.filterTasks(this.statusFilter);
       
       this.projectservice.updateTask(task._id, { status: newStatus }).subscribe({
-        next: () => console.log('Task status updated successfully'),
+        next: () => {
+          console.log('Task status updated successfully');
+          if (newStatus === 'Completed') {
+            this.playSuccessChime();
+          }
+        },
         error: err => console.error('Error updating task status', err)
       });
+    }
+  }
+
+  playSuccessChime(): void {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const soundEnabled = user.settings?.preferences?.soundEffects ?? true;
+      if (!soundEnabled) return;
+
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const context = new AudioContextClass();
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+      
+      // Chime note 1 (C5)
+      const osc1 = context.createOscillator();
+      const gain1 = context.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, context.currentTime); 
+      gain1.gain.setValueAtTime(0.12, context.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(context.destination);
+      osc1.start();
+      osc1.stop(context.currentTime + 0.3);
+
+      // Chime note 2 (E5, slightly delayed for a beautiful musical chime)
+      const osc2 = context.createOscillator();
+      const gain2 = context.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, context.currentTime + 0.08); 
+      gain2.gain.setValueAtTime(0.12, context.currentTime + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+      osc2.connect(gain2);
+      gain2.connect(context.destination);
+      osc2.start(context.currentTime + 0.08);
+      osc2.stop(context.currentTime + 0.4);
+    } catch (e) {
+      console.warn('Web Audio API not supported or blocked by browser policy:', e);
     }
   }
 
@@ -248,5 +317,69 @@ export class EmployeeDashboard implements OnInit {
 
   logout(): void {
     this.router.navigate(['/']);
+  }
+
+  getLoggedInUserId(): string {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user._id || user.id || '';
+  }
+
+  // Task Discussion / Chat Modal Methods
+  openChatModal(task: any): void {
+    this.activeChatTask = task;
+    this.chatComments = [];
+    this.newMessageText = '';
+    this.showChatModal = true;
+    this.loadChatComments();
+  }
+
+  closeChatModal(): void {
+    this.showChatModal = false;
+    this.activeChatTask = null;
+    this.chatComments = [];
+  }
+
+  loadChatComments(): void {
+    if (!this.activeChatTask) return;
+    this.projectservice.getTaskComments(this.activeChatTask._id).subscribe({
+      next: (res: any) => {
+        this.chatComments = res.data || [];
+        this.scrollToBottom();
+      },
+      error: err => console.error('Error fetching comments', err)
+    });
+  }
+
+  sendChatMessage(): void {
+    if (!this.newMessageText.trim() || !this.activeChatTask || this.isSendingMessage) return;
+    this.isSendingMessage = true;
+    
+    const senderId = this.getLoggedInUserId();
+    const payload = {
+      senderId,
+      content: this.newMessageText
+    };
+
+    this.projectservice.createTaskComment(this.activeChatTask._id, payload).subscribe({
+      next: (res: any) => {
+        this.newMessageText = '';
+        this.isSendingMessage = false;
+        this.chatComments.push(res.data);
+        this.scrollToBottom();
+      },
+      error: err => {
+        console.error('Error sending message', err);
+        this.isSendingMessage = false;
+      }
+    });
+  }
+
+  scrollToBottom(): void {
+    setTimeout(() => {
+      const container = document.getElementById('chat-messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   }
 }

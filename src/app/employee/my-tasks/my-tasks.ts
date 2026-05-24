@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { Projectservice } from '../../manager/projects/projectservice';
 
 @Component({
   selector: 'app-my-tasks',
@@ -21,7 +22,14 @@ export class MyTasks implements OnInit {
   myTasks: any[] = [];
   filteredTasks: any[] = [];
 
-  constructor(private http: HttpClient) {}
+  // Chat Modal
+  showChatModal: boolean = false;
+  activeChatTask: any = null;
+  chatComments: any[] = [];
+  newMessageText: string = '';
+  isSendingMessage: boolean = false;
+
+  constructor(private http: HttpClient, private projectservice: Projectservice) {}
 
   ngOnInit(): void {
     this.fetchMyTasks();
@@ -107,12 +115,58 @@ export class MyTasks implements OnInit {
         if (res.success) {
           console.log(`Task "${task.title}" status updated to: ${task.status}`);
           this.filterTasks();
+          
+          if (task.status === 'Completed') {
+            this.playSuccessChime();
+          }
         }
       },
       error: (err) => {
         console.error('Failed to update task status in database', err);
       }
     });
+  }
+
+  playSuccessChime(): void {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const soundEnabled = user.settings?.preferences?.soundEffects ?? true;
+      if (!soundEnabled) return;
+
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const context = new AudioContextClass();
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+      
+      // Chime note 1 (C5)
+      const osc1 = context.createOscillator();
+      const gain1 = context.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, context.currentTime); 
+      gain1.gain.setValueAtTime(0.12, context.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(context.destination);
+      osc1.start();
+      osc1.stop(context.currentTime + 0.3);
+
+      // Chime note 2 (E5, slightly delayed for a beautiful musical chime)
+      const osc2 = context.createOscillator();
+      const gain2 = context.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, context.currentTime + 0.08); 
+      gain2.gain.setValueAtTime(0.12, context.currentTime + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+      osc2.connect(gain2);
+      gain2.connect(context.destination);
+      osc2.start(context.currentTime + 0.08);
+      osc2.stop(context.currentTime + 0.4);
+    } catch (e) {
+      console.warn('Web Audio API not supported or blocked by browser policy:', e);
+    }
   }
 
   // Helper methods
@@ -137,5 +191,71 @@ export class MyTasks implements OnInit {
   isOverdue(dueDate: string, status: string): boolean {
     if (dueDate === 'N/A' || status === 'Completed') return false;
     return new Date(dueDate) < new Date();
+  }
+
+  getLoggedInUserId(): string {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    return user._id || user.id || '';
+  }
+
+  // Task Discussion / Chat Modal Methods
+  openChatModal(task: any): void {
+    // Make sure we have the correct ID shape
+    const normalizedTask = { ...task, _id: task.id || task._id };
+    this.activeChatTask = normalizedTask;
+    this.chatComments = [];
+    this.newMessageText = '';
+    this.showChatModal = true;
+    this.loadChatComments();
+  }
+
+  closeChatModal(): void {
+    this.showChatModal = false;
+    this.activeChatTask = null;
+    this.chatComments = [];
+  }
+
+  loadChatComments(): void {
+    if (!this.activeChatTask) return;
+    this.projectservice.getTaskComments(this.activeChatTask._id).subscribe({
+      next: (res: any) => {
+        this.chatComments = res.data || [];
+        this.scrollToBottom();
+      },
+      error: err => console.error('Error fetching comments', err)
+    });
+  }
+
+  sendChatMessage(): void {
+    if (!this.newMessageText.trim() || !this.activeChatTask || this.isSendingMessage) return;
+    this.isSendingMessage = true;
+    
+    const senderId = this.getLoggedInUserId();
+    const payload = {
+      senderId,
+      content: this.newMessageText
+    };
+
+    this.projectservice.createTaskComment(this.activeChatTask._id, payload).subscribe({
+      next: (res: any) => {
+        this.newMessageText = '';
+        this.isSendingMessage = false;
+        this.chatComments.push(res.data);
+        this.scrollToBottom();
+      },
+      error: err => {
+        console.error('Error sending message', err);
+        this.isSendingMessage = false;
+      }
+    });
+  }
+
+  scrollToBottom(): void {
+    setTimeout(() => {
+      const container = document.getElementById('chat-messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   }
 }

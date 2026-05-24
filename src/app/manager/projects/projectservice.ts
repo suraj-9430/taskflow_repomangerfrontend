@@ -91,4 +91,16 @@ export class Projectservice {
       headers: this.getAuthHeaders(),
     });
   }
+
+  getTaskComments(taskId: string) {
+    return this.http.get(`${this.baseUrl}/tasks/${taskId}/comments`, {
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  createTaskComment(taskId: string, payload: any) {
+    return this.http.post(`${this.baseUrl}/tasks/${taskId}/comments`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+  }
 }

@@ -55,6 +55,16 @@ export class ManagerDashboard implements OnInit {
           if (user.avatar) {
             this.managerAvatar = user.avatar;
           }
+
+          // Save loaded user with settings to localStorage
+          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+          localUser.avatar = user.avatar || localUser.avatar;
+          localUser.firstName = user.firstName || localUser.firstName;
+          localUser.lastName = user.lastName || localUser.lastName;
+          if (user.settings) {
+            localUser.settings = user.settings;
+          }
+          localStorage.setItem('user', JSON.stringify(localUser));
         }
       },
       error: (err) => console.error('Error fetching manager profile', err)

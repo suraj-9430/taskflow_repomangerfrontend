@@ -609,3 +609,384 @@
   .task-row { flex-direction: column; }
   .task-status-section { flex-direction: row; align-items: center; }
 }
+
+/* ============================================================
+   Task Discussion / Chat Modal Styles
+   ============================================================ */
+
+/* Discussion Trigger Button */
+.task-meta .chat-btn {
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  border: var(--border-subtle);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--r-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all var(--t-base);
+}
+
+.task-meta .chat-btn:hover {
+  color: var(--accent) !important;
+  border-color: var(--accent) !important;
+  background: rgba(255, 153, 0, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+/* Chat Modal Styles */
+.chat-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 11, 14, 0.75) !important;
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.chat-modal-content {
+  max-width: 650px !important;
+  width: 95% !important;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  background: rgba(22, 24, 30, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  overflow: hidden !important;
+  border-radius: var(--r-xl);
+  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chat-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: rgba(18, 20, 25, 0.8) !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+}
+
+.chat-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.chat-header-info h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+}
+
+.chat-header-info h3 i {
+  color: var(--accent);
+}
+
+.chat-task-title {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: color var(--t-base);
+}
+
+.close-btn:hover {
+  color: var(--color-danger);
+}
+
+.chat-modal-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  overflow: hidden;
+  background: rgba(15, 17, 21, 0.6);
+}
+
+.chat-task-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: rgba(26, 29, 36, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 0.8rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.summary-label {
+  color: var(--text-muted);
+}
+
+.summary-val {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar styling for chat */
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat Message Styling */
+.message-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 80%;
+  animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.message-wrapper:not(.outgoing) {
+  align-self: flex-start;
+}
+
+.message-wrapper.outgoing {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.message-sender-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.message-wrapper.outgoing .message-sender-avatar {
+  background: var(--grad-amber);
+  color: var(--text-inverse);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.message-bubble-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: calc(100% - 40px);
+}
+
+.message-sender-name {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.message-wrapper.outgoing .message-sender-name {
+  justify-content: flex-end;
+}
+
+.sender-role-label {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.message-bubble {
+  padding: 0.75rem 1rem;
+  border-radius: 0 14px 14px 14px;
+  background: rgba(36, 40, 50, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.message-wrapper.outgoing .message-bubble {
+  border-radius: 14px 0 14px 14px;
+  background: var(--grad-amber);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.message-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.message-wrapper.outgoing .message-text {
+  color: var(--text-inverse);
+  font-weight: 500;
+}
+
+.message-time {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  align-self: flex-start;
+}
+
+.message-wrapper.outgoing .message-time {
+  align-self: flex-end;
+}
+
+/* Empty State */
+.empty-chat-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  gap: 0.75rem;
+  text-align: center;
+  opacity: 0.6;
+  padding: 4rem 2rem;
+}
+
+.empty-chat-state i {
+  font-size: 2.5rem;
+  color: var(--accent);
+}
+
+.empty-chat-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  max-width: 300px;
+}
+
+/* Chat Input Footer styling */
+.chat-modal-footer {
+  padding: 1rem 1.25rem !important;
+  background: rgba(22, 24, 30, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.chat-input-row {
+  display: flex;
+  align-items: center;
+  background: rgba(12, 14, 18, 0.8);
+  border-radius: var(--r-md);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.25rem 0.25rem 0.25rem 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: all var(--t-base);
+}
+
+.chat-input-row:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-dim);
+}
+
+.chat-input-row input {
+  flex: 1;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-primary) !important;
+  font-size: 0.95rem !important;
+  padding: 0.5rem 0 !important;
+}
+
+.chat-input-row input::placeholder {
+  color: var(--text-muted);
+}
+
+.chat-input-row .send-btn {
+  background: var(--grad-amber) !important;
+  color: var(--text-inverse) !important;
+  border: none !important;
+  border-radius: var(--r-sm) !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem !important;
+  cursor: pointer;
+  transition: all var(--t-base) !important;
+  box-shadow: 0 2px 8px var(--accent-dim) !important;
+}
+
+.chat-input-row .send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px var(--accent-glow) !important;
+}
+
+.chat-input-row .send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

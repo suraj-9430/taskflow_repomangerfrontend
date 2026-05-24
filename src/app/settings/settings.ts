@@ -86,6 +86,17 @@ export class Settings implements OnInit {
               this.applyTheme(this.preferences.themeColor);
             }
           }
+
+          // Save loaded user with settings to localStorage
+          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+          localUser.avatar = user.avatar || localUser.avatar;
+          localUser.firstName = user.firstName || localUser.firstName;
+          localUser.lastName = user.lastName || localUser.lastName;
+          localUser.settings = {
+            notifications: this.notifications,
+            preferences: this.preferences
+          };
+          localStorage.setItem('user', JSON.stringify(localUser));
         }
       },
       error: (err) => {
@@ -140,8 +151,23 @@ export class Settings implements OnInit {
         if (res.success) {
           // Save locally
           localStorage.setItem('themeColor', this.preferences.themeColor);
+          
+          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+          localUser.avatar = this.profile.avatar;
+          localUser.firstName = firstName;
+          localUser.lastName = lastName;
+          localUser.settings = {
+            notifications: this.notifications,
+            preferences: this.preferences
+          };
+          localStorage.setItem('user', JSON.stringify(localUser));
+
           this.applyTheme(this.preferences.themeColor);
           this.triggerToast('Settings updated successfully!');
+
+          if (this.preferences.soundEffects) {
+            this.playSuccessSound();
+          }
         }
       },
       error: (err) => {
@@ -150,6 +176,44 @@ export class Settings implements OnInit {
         this.triggerToast('Failed to save settings. Please try again.');
       }
     });
+  }
+
+  playSuccessSound(): void {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const context = new AudioContextClass();
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+      
+      // Chime note 1 (C5)
+      const osc1 = context.createOscillator();
+      const gain1 = context.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, context.currentTime); 
+      gain1.gain.setValueAtTime(0.12, context.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(context.destination);
+      osc1.start();
+      osc1.stop(context.currentTime + 0.3);
+
+      // Chime note 2 (E5, slightly delayed for a beautiful musical chime)
+      const osc2 = context.createOscillator();
+      const gain2 = context.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, context.currentTime + 0.08); 
+      gain2.gain.setValueAtTime(0.12, context.currentTime + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+      osc2.connect(gain2);
+      gain2.connect(context.destination);
+      osc2.start(context.currentTime + 0.08);
+      osc2.stop(context.currentTime + 0.4);
+    } catch (e) {
+      console.warn('Web Audio API not supported or blocked by browser policy:', e);
+    }
   }
 
   applyTheme(color: string): void {

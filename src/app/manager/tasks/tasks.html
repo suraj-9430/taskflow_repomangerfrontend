@@ -92,6 +92,9 @@
             <button class="move-btn" (click)="updateStatus(task, 'In Progress')" title="Move to In Progress">
               <i class="fas fa-arrow-right"></i>
             </button>
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i>
+            </button>
             <button class="edit-btn" (click)="openEditModal(task)" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
@@ -136,6 +139,9 @@
             <button class="move-btn" (click)="updateStatus(task, 'Completed')" title="Mark Complete">
               <i class="fas fa-check"></i>
             </button>
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i>
+            </button>
             <button class="edit-btn" (click)="openEditModal(task)" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
@@ -176,6 +182,9 @@
           <div class="task-actions">
             <button class="move-btn back" (click)="updateStatus(task, 'In Progress')" title="Reopen">
               <i class="fas fa-undo"></i>
+            </button>
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i>
             </button>
             <button class="delete-btn" (click)="deleteTask(task)" title="Delete">
               <i class="fas fa-trash"></i>
@@ -255,6 +264,79 @@
       <div class="modal-footer">
         <button class="cancel-btn" (click)="closeModal()">Cancel</button>
         <button class="save-btn" (click)="saveTask()">{{ isEditing ? 'Update' : 'Create' }}</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Task Discussion Chat Modal -->
+  @if(showChatModal && activeChatTask) {
+  <div class="modal-overlay chat-modal-overlay" (click)="closeChatModal()">
+    <div class="modal-content chat-modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header chat-modal-header">
+        <div class="chat-header-info">
+          <h3><i class="fas fa-comments text-accent"></i> Task Discussion</h3>
+          <span class="chat-task-title">{{ activeChatTask.title }}</span>
+        </div>
+        <button class="close-btn" (click)="closeChatModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body chat-modal-body">
+        <!-- Task Meta Summary inside Chat -->
+        <div class="chat-task-summary">
+          <div class="summary-item">
+            <span class="summary-label">Project:</span>
+            <span class="summary-val">{{ getProjectName(activeChatTask.projectId) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Assignee:</span>
+            <span class="summary-val">{{ getEmployeeName(activeChatTask.assignedTo) }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Status:</span>
+            <span class="status-badge" [ngClass]="getStatusClass(activeChatTask.status)">{{ activeChatTask.status }}</span>
+          </div>
+        </div>
+
+        <!-- Chat History -->
+        <div class="chat-messages" id="chat-messages-container">
+          @for(comment of chatComments; track comment._id) {
+            <div class="message-wrapper" [class.outgoing]="comment.senderId?._id === getLoggedInUserId() || comment.senderId === getLoggedInUserId()">
+              <div class="message-sender-avatar">
+                {{ comment.senderId?.firstName ? comment.senderId.firstName.charAt(0).toUpperCase() : 'U' }}
+              </div>
+              <div class="message-bubble-container">
+                <div class="message-sender-name">
+                  {{ comment.senderId?.firstName }} {{ comment.senderId?.lastName }} 
+                  <span class="sender-role-label">({{ comment.senderId?.role || 'User' }})</span>
+                </div>
+                <div class="message-bubble">
+                  <p class="message-text">{{ comment.content }}</p>
+                </div>
+                <span class="message-time">{{ comment.createdAt | date:'shortTime' }}</span>
+              </div>
+            </div>
+          }
+          @if(chatComments.length === 0) {
+            <div class="empty-chat-state">
+              <i class="fas fa-comments"></i>
+              <p>No messages yet. Start the discussion with the assigned employee!</p>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="modal-footer chat-modal-footer">
+        <div class="chat-input-row">
+          <input type="text" [(ngModel)]="newMessageText" placeholder="Type a message related to this task..." (keyup.enter)="sendChatMessage()" [disabled]="isSendingMessage">
+          <button class="send-btn" (click)="sendChatMessage()" [disabled]="!newMessageText.trim() || isSendingMessage">
+            @if(isSendingMessage) {
+              <i class="fas fa-spinner fa-spin"></i>
+            } @else {
+              <i class="fas fa-paper-plane"></i>
+            }
+          </button>
+        </div>
       </div>
     </div>
   </div>
