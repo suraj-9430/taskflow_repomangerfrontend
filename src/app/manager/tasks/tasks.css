@@ -3,6 +3,7 @@
   padding: 1.5rem;
   background-color: var(--surface-0);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 /* Header */
@@ -170,8 +171,28 @@
 /* Kanban Board */
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
   gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.25rem 1rem;
+  margin-left: -0.25rem;
+  margin-right: -0.25rem;
+}
+
+/* Custom Scrollbar for Kanban Board Scroll */
+.kanban-board::-webkit-scrollbar {
+  height: 6px;
+}
+.kanban-board::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: var(--r-full);
+}
+.kanban-board::-webkit-scrollbar-thumb {
+  background: var(--surface-4);
+  border-radius: var(--r-full);
+}
+.kanban-board::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .kanban-column {
@@ -514,6 +535,8 @@
 @media (max-width: 992px) {
   .kanban-board {
     grid-template-columns: 1fr;
+    overflow-x: visible;
+    padding: 0;
   }
 
   .kanban-column {
@@ -896,4 +919,32 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* ── Kanban Drag & Drop Styles ── */
+.kanban-column {
+  transition: border-color var(--t-base), background var(--t-base), box-shadow var(--t-base);
+  border: 1px solid transparent;
+}
+
+.column-dragover {
+  border-color: var(--accent) !important;
+  background: rgba(255, 179, 0, 0.05) !important;
+  box-shadow: 0 0 24px var(--accent-glow) !important;
+}
+
+.task-card {
+  transition: transform var(--t-base), opacity var(--t-base), box-shadow var(--t-base);
+  cursor: grab;
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+.card-dragging {
+  opacity: 0.35 !important;
+  transform: scale(0.95) translateY(2px);
+  border: 1px dashed var(--accent) !important;
+  box-shadow: none !important;
 }

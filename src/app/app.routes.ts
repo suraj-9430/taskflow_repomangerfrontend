@@ -13,6 +13,7 @@ import { MyTasks } from './employee/my-tasks/my-tasks';
 import { MyProjects } from './employee/my-projects/my-projects';
 import { Settings } from './settings/settings';
 import { Notifications } from './notifications/notifications';
+import { AttendanceComponent } from './attendance/attendance';
 
 export const routes: Routes = [
   { path:"", loadComponent: () => import('./login-page/login-page').then(m => m.LoginPage) ,pathMatch:'full'},
@@ -25,7 +26,8 @@ export const routes: Routes = [
       { path: '', component: AdminDashboard },
       { path: 'action', component: Createandmanage },
       { path: 'settings', component: Settings },
-      { path: 'notifications', component: Notifications }
+      { path: 'notifications', component: Notifications },
+      { path: 'attendance', component: AttendanceComponent }
     ]
   },
 
@@ -39,7 +41,8 @@ export const routes: Routes = [
       { path: 'tasks', component: Tasks },
       { path: 'employees', component: Employees },
       { path: 'settings', component: Settings },
-      { path: 'notifications', component: Notifications }
+      { path: 'notifications', component: Notifications },
+      { path: 'attendance', component: AttendanceComponent }
     ]
   },
 
@@ -52,7 +55,8 @@ export const routes: Routes = [
       { path: 'my-tasks', component: MyTasks },
       { path: 'my-projects', component: MyProjects },
       { path: 'settings', component: Settings },
-      { path: 'notifications', component: Notifications }
+      { path: 'notifications', component: Notifications },
+      { path: 'attendance', component: AttendanceComponent }
     ]
   },
 

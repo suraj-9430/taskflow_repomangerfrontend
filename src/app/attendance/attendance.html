@@ -1,0 +1,274 @@
+<div class="attendance-container animate-fadeIn">
+  <!-- Title Header -->
+  <div class="page-title">
+    <div>
+      <h1>Workplace <span>Attendance</span> Tracker</h1>
+      <p>Monitor physical office presence, remote coordinates logs, and monthly calendar sheets</p>
+    </div>
+    
+    <!-- Admin User Selector (Custom Premium Dropdown) -->
+    @if (isAdmin) {
+      <div class="selector-card glassmorphic-panel">
+        <label><i class="fa-solid fa-users-gear text-accent"></i> Select Member:</label>
+        <div class="custom-select-wrapper">
+          <div class="custom-select-trigger" [class.active]="showDropdown" (click)="toggleDropdown()">
+            <span><i class="fa-solid fa-circle-user text-accent"></i> {{ getSelectedUserFullNameWithRole() }}</span>
+            <i class="fa-solid fa-chevron-down chevron" [class.open]="showDropdown"></i>
+          </div>
+          @if (showDropdown) {
+            <div class="custom-options-container">
+              @for(user of users; track user._id) {
+                <div class="custom-option" [class.selected]="selectedUserId === (user._id || user.id)" (click)="selectUser(user)">
+                  <span class="option-name">{{ user.firstName }} {{ user.lastName }}</span>
+                  <span class="option-role">{{ user.designation || user.role }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- 🛡️ Admin remote work approvals queue -->
+  @if (isAdmin && pendingApprovals.length > 0) {
+    <div class="pending-approvals-card glassmorphic-panel animate-fadeInDown">
+      <div class="pending-header">
+        <h3><i class="fa-solid fa-triangle-exclamation text-warning"></i> Pending Remote Work Requests ({{ pendingApprovals.length }})</h3>
+        <p>Review worker coordinate deviations before validating attendance presence</p>
+      </div>
+      <div class="approvals-list">
+        @for(record of pendingApprovals; track record._id) {
+          <div class="approval-row">
+            <div class="approval-user-info">
+              <span class="user-name">{{ record.user?.firstName }} {{ record.user?.lastName }}</span>
+              <span class="user-details"><i class="fa-solid fa-briefcase"></i> {{ record.user?.designation || record.user?.role }} | <i class="fa-solid fa-envelope"></i> {{ record.user?.email }}</span>
+            </div>
+            <div class="approval-gps-info">
+              <span class="gps-coords"><i class="fa-solid fa-map-pin text-accent"></i> {{ record.coordinates }}</span>
+              <span class="gps-dist"><i class="fa-solid fa-ruler-horizontal"></i> {{ record.distanceMeters }}m to office hub</span>
+            </div>
+            <div class="approval-time">
+              <span>{{ record.timestamp | date:'medium' }}</span>
+            </div>
+            <div class="approval-actions">
+              <button class="btn-action approve" (click)="approveRecord(record._id!)" title="Approve Request">
+                <i class="fa-solid fa-check"></i> Approve
+              </button>
+              <button class="btn-action reject" (click)="rejectRecord(record._id!)" title="Reject Request">
+                <i class="fa-solid fa-xmark"></i> Reject
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Key Statistics Summary Widgets -->
+  <div class="stats-grid">
+    <div class="stat-box rate-box glassmorphic-panel">
+      <div class="stat-icon circle-rate">
+        <span class="rate-value">{{ attendancePercentage }}%</span>
+      </div>
+      <div class="stat-content">
+        <h4>Monthly Attendance</h4>
+        <p>Calculated over business days only</p>
+      </div>
+    </div>
+
+    <div class="stat-box glassmorphic-panel working-hours">
+      <div class="stat-icon yellow"><i class="fa-solid fa-business-time"></i></div>
+      <div class="stat-info">
+        <h3>{{ totalWorkingHours }}h</h3>
+        <p>Total Hours Worked</p>
+      </div>
+    </div>
+
+    <div class="stat-box glassmorphic-panel present-office">
+      <div class="stat-icon green"><i class="fa-solid fa-building-user"></i></div>
+      <div class="stat-info">
+        <h3>{{ totalOfficePresent }}</h3>
+        <p>Office Present Days</p>
+      </div>
+    </div>
+
+    <div class="stat-box glassmorphic-panel present-remote">
+      <div class="stat-icon orange"><i class="fa-solid fa-house-laptop"></i></div>
+      <div class="stat-info">
+        <h3>{{ totalRemotePresent }}</h3>
+        <p>Remote Present Days</p>
+      </div>
+    </div>
+
+    <div class="stat-box glassmorphic-panel absent-days">
+      <div class="stat-icon red"><i class="fa-solid fa-user-slash"></i></div>
+      <div class="stat-info">
+        <h3>{{ totalAbsent }}</h3>
+        <p>Absent / Missed Days</p>
+      </div>
+    </div>
+
+    <div class="stat-box glassmorphic-panel weekend-days">
+      <div class="stat-icon gray"><i class="fa-solid fa-calendar-day"></i></div>
+      <div class="stat-info">
+        <h3>{{ totalWeekends }}</h3>
+        <p>Rest Days / Weekends</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid Layout: Calendar & Sheet Logs -->
+  <div class="attendance-grid">
+    
+    <!-- 📆 Calendar Month Sheet -->
+    <div class="calendar-card glassmorphic-panel">
+      <div class="calendar-header">
+        <button class="nav-arrow" (click)="prevMonth()" title="Previous Month">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <h2>
+          <i class="fa-solid fa-calendar-days text-accent"></i> 
+          {{ getSelectedUserName() }}'s Sheet - {{ currentMonth | date:'MMMM yyyy' }}
+        </h2>
+        <button class="nav-arrow" (click)="nextMonth()" title="Next Month">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <!-- Grid Column Labels -->
+      <div class="calendar-weekdays">
+        @for(day of weekDays; track day) {
+          <div class="weekday">{{ day }}</div>
+        }
+      </div>
+
+      <!-- Grid Days Sheet -->
+      <div class="calendar-grid">
+        @for(day of calendarDays; track day.dayNumber ? day.dayNumber : day.date.getTime()) {
+          <div class="calendar-day" 
+               [class.empty-day]="day.dayNumber === 0"
+               [class.weekend-day]="day.isWeekend"
+               [class.today-day]="day.isToday"
+               [class.status-office]="day.status === 'office'"
+               [class.status-remote]="day.status === 'remote'"
+               [class.status-absent]="day.status === 'absent'"
+               [class.status-rejected]="day.status === 'rejected'"
+               [class.status-future]="day.status === 'pending' && day.dayNumber > 0 && !day.log"
+               [class.status-pending-approval]="day.log && day.log.type === 'Remote Present' && day.log.status === 'Pending'"
+               [title]="day.dayNumber > 0 ? (day.log ? (day.log.status === 'Pending' ? '⏳ Remote Punch-In Pending Approval' : 'Punch-In at ' + (day.log.timestamp | date:'shortTime') + ' (' + day.log.coordinates + ', ' + day.log.distanceMeters + 'm)') : day.status === 'weekend' ? 'Weekend Rest Day' : day.status === 'absent' ? 'Absent / Shift missed' : 'Workday Pending') : ''">
+            
+            @if(day.dayNumber > 0) {
+              <span class="day-number">{{ day.dayNumber }}</span>
+              <div class="day-footer">
+                @if(day.workingHours) {
+                  <span class="day-hours" title="Working Hours"><i class="fa-solid fa-clock"></i> {{ day.workingHours }}h</span>
+                } @else {
+                  <span></span>
+                }
+                <div class="status-marker">
+                  @if(day.status === 'office') {
+                    <i class="fa-solid fa-building"></i>
+                  } @else if(day.status === 'remote') {
+                    <i class="fa-solid fa-house-laptop text-warning animate-pulse"></i>
+                  } @else if(day.status === 'absent' || day.status === 'rejected') {
+                    <i class="fa-solid fa-xmark text-danger"></i>
+                  } @else if(day.log && day.log.type === 'Remote Present' && day.log.status === 'Pending') {
+                    <i class="fa-solid fa-hourglass-half text-warning animate-pulse"></i>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+      
+      <!-- Calendar Legend -->
+      <div class="calendar-legend">
+        <div class="legend-item"><span class="legend-dot office"></span> Office Present</div>
+        <div class="legend-item"><span class="legend-dot remote"></span> Remote Present</div>
+        <div class="legend-item"><span class="legend-dot pending-approval"></span> Pending Approval</div>
+        <div class="legend-item"><span class="legend-dot absent"></span> Absent / Missed</div>
+        <div class="legend-item"><span class="legend-dot weekend"></span> Weekend Rest</div>
+        <div class="legend-item"><span class="legend-dot pending"></span> Future Plan</div>
+      </div>
+    </div>
+
+    <!-- 📊 Shift Activity Logs List -->
+    <div class="logs-card glassmorphic-panel">
+      <div class="logs-header">
+        <h2>
+          <i class="fa-solid fa-list-ul text-accent"></i> 
+          {{ isAdmin ? 'All Registered Check-Ins' : 'Recent Shift Activities' }}
+        </h2>
+      </div>
+
+      <div class="logs-body">
+        <div class="table-responsive">
+          <table class="logs-table">
+            <thead>
+              <tr>
+                @if(isAdmin) {
+                  <th>Member</th>
+                }
+                <th>Time & Date</th>
+                <th>Punch Type</th>
+                <th>Distance to Hub</th>
+                <th>GPS Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for(log of (isAdmin ? filteredLogs : attendanceLogs); track log._id || log.timestamp) {
+                <tr>
+                  @if(isAdmin) {
+                    <td>
+                      <div class="user-cell">
+                        <span class="user-name">{{ log.user?.firstName }} {{ log.user?.lastName }}</span>
+                        <span class="user-role">{{ log.user?.designation || log.user?.role }}</span>
+                      </div>
+                    </td>
+                  }
+                  <td>
+                    <div class="date-cell">
+                      <span class="log-date-text">{{ log.timestamp | date:'mediumDate' }}</span>
+                      <span class="log-time-text">{{ log.timestamp | date:'shortTime' }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge-status" 
+                          [class.badge-active]="log.type === 'Office Present' || (log.type === 'Remote Present' && log.status === 'Approved')" 
+                          [class.badge-hold]="log.type === 'Remote Present' && log.status === 'Pending'" 
+                          [class.badge-inactive]="log.type === 'Clocked Out' || (log.type === 'Remote Present' && log.status === 'Rejected')">
+                      {{ log.type === 'Remote Present' ? (log.status === 'Pending' ? 'Remote (Pending)' : log.status === 'Rejected' ? 'Remote (Rejected)' : 'Remote Present') : log.type }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="log-dist" [class.out-bounds]="log.distanceMeters > 150">
+                      @if (log.type === 'Clocked Out' || log.distanceMeters === 0) {
+                        -
+                      } @else {
+                        {{ log.distanceMeters }} Meters
+                      }
+                    </span>
+                  </td>
+                  <td>
+                    <span class="log-coords"><i class="fa-solid fa-map-pin"></i> {{ log.coordinates }}</span>
+                  </td>
+                </tr>
+              }
+              @if ((isAdmin ? filteredLogs : attendanceLogs).length === 0) {
+                <tr>
+                  <td [attr.colspan]="isAdmin ? 5 : 4" class="empty-table">
+                    <i class="fa-solid fa-clipboard-question empty-icon"></i>
+                    <p>No logged attendance records found for this period.</p>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

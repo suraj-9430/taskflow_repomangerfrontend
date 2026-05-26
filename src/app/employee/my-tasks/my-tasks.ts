@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Projectservice } from '../../manager/projects/projectservice';
+import { AiService } from '../../services/ai.service';
 
 @Component({
   selector: 'app-my-tasks',
@@ -29,7 +30,7 @@ export class MyTasks implements OnInit {
   newMessageText: string = '';
   isSendingMessage: boolean = false;
 
-  constructor(private http: HttpClient, private projectservice: Projectservice) {}
+  constructor(private http: HttpClient, private projectservice: Projectservice, private aiService: AiService) {}
 
   ngOnInit(): void {
     this.fetchMyTasks();
@@ -257,5 +258,162 @@ export class MyTasks implements OnInit {
         container.scrollTop = container.scrollHeight;
       }
     }, 50);
+  }
+
+  // ── Employee Kanban Drag & Drop ──
+  draggedTask: any = null;
+  activeDragColumn: string | null = null;
+
+  onDragStart(task: any): void {
+    this.draggedTask = task;
+  }
+
+  onDragEnd(): void {
+    this.draggedTask = null;
+    this.activeDragColumn = null;
+  }
+
+  onDragOver(event: DragEvent, column: string): void {
+    event.preventDefault(); // Required to allow drop
+    this.activeDragColumn = column;
+  }
+
+  onDragLeave(event: DragEvent, column: string): void {
+    if (this.activeDragColumn === column) {
+      this.activeDragColumn = null;
+    }
+  }
+
+  onDrop(event: DragEvent, newStatus: string): void {
+    event.preventDefault();
+    this.activeDragColumn = null;
+    if (this.draggedTask && this.draggedTask.status !== newStatus) {
+      const task = this.draggedTask;
+      task.status = newStatus; // Update local state for immediate feedback
+      this.onStatusChange(task); // Triggers API call and chime sound effects!
+    }
+    this.draggedTask = null;
+  }
+
+  // ── Employee Task List Helpers ──
+  getTasksByStatus(status: string): any[] {
+    return this.filteredTasks.filter(t => t.status === status);
+  }
+
+  // ── AI Workflow Assistant Functions ──
+  isGeneratingBreakdown: boolean = false;
+
+  generateAIBreakdown(task: any): void {
+    if (!task.title) return;
+    this.isGeneratingBreakdown = true;
+    this.aiService.generateBreakdown(task.title, task.description).subscribe({
+      next: (subtasks) => {
+        this.isGeneratingBreakdown = false;
+        
+        let formattedChecklist = '\n\n📋 Suggested AI Subtasks:\n';
+        subtasks.forEach(step => {
+          formattedChecklist += `- [ ] ${step}\n`;
+        });
+        
+        // Find in tasks array
+        const found = this.myTasks.find(t => t.id === task.id);
+        if (found) {
+          if (!found.description.includes('📋 Suggested AI Subtasks:')) {
+            found.description = found.description.trim() + formattedChecklist;
+          } else {
+            const parts = found.description.split('📋 Suggested AI Subtasks:');
+            found.description = parts[0].trim() + formattedChecklist;
+          }
+          
+          // Save back to backend!
+          const token = localStorage.getItem('token');
+          const headers = { Authorization: `Bearer ${token}` };
+          this.http.put<any>(`${environment.apiUrl}/tasks/${found.id}`, { description: found.description }, { headers }).subscribe({
+            next: () => console.log('Subtask checklist saved to description!'),
+            error: (err) => console.error('Failed to save description update to database', err)
+          });
+        }
+      },
+      error: (err) => {
+        this.isGeneratingBreakdown = false;
+        console.error('Failed to generate AI breakdown', err);
+      }
+    });
+  }
+
+  getActualDescription(description: string): string {
+    if (!description) return '';
+    const index = description.indexOf('📋 Suggested AI Subtasks:');
+    if (index === -1) return description;
+    return description.substring(0, index).trim();
+  }
+
+  hasAISuggestions(description: string): boolean {
+    if (!description) return false;
+    return description.includes('📋 Suggested AI Subtasks:');
+  }
+
+  getAISuggestions(description: string): { text: string; completed: boolean }[] {
+    if (!description) return [];
+    const index = description.indexOf('📋 Suggested AI Subtasks:');
+    if (index === -1) return [];
+    const suggestionPart = description.substring(index + '📋 Suggested AI Subtasks:'.length);
+    return suggestionPart
+      .split('\n')
+      .map(line => {
+        const trimmed = line.trim();
+        const match = trimmed.match(/^-\s*\[\s*([ xX])\s*\]\s*(.*)$/);
+        if (!match) return null;
+        return {
+          text: match[2].trim(),
+          completed: match[1].toLowerCase() === 'x'
+        };
+      })
+      .filter((item): item is { text: string; completed: boolean } => item !== null && item.text.length > 0);
+  }
+
+  toggleAISubtask(task: any, indexToToggle: number): void {
+    if (!task.description) return;
+    const headerIndex = task.description.indexOf('📋 Suggested AI Subtasks:');
+    if (headerIndex === -1) return;
+
+    const baseDescription = task.description.substring(0, headerIndex).trim();
+    const suggestionPart = task.description.substring(headerIndex + '📋 Suggested AI Subtasks:'.length);
+    
+    const lines = suggestionPart.split('\n');
+    let subtaskIndex = 0;
+    
+    const updatedLines = lines.map((line: string) => {
+      const trimmed = line.trim();
+      const match = trimmed.match(/^-\s*\[\s*([ xX])\s*\]\s*(.*)$/);
+      if (!match) return line;
+      
+      if (subtaskIndex === indexToToggle) {
+        const isCurrentCompleted = match[1].toLowerCase() === 'x';
+        const newStatus = isCurrentCompleted ? ' ' : 'x';
+        subtaskIndex++;
+        
+        if (newStatus === 'x') {
+          this.playSuccessChime();
+        }
+        
+        return `- [${newStatus}] ${match[2].trim()}`;
+      }
+      
+      subtaskIndex++;
+      return line;
+    });
+
+    const updatedDescription = baseDescription + '\n\n📋 Suggested AI Subtasks:\n' + updatedLines.join('\n');
+    task.description = updatedDescription;
+
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    const taskId = task.id || task._id;
+    
+    this.http.put<any>(`${environment.apiUrl}/tasks/${taskId}`, { description: updatedDescription }, { headers }).subscribe({
+      next: () => console.log('Interactive subtask state successfully updated in MongoDB!'),
+      error: (err: any) => console.error('Failed to update subtask check state in database', err)
+    });
   }
 }

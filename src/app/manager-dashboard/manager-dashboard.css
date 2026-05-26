@@ -518,3 +518,359 @@
   .manager-dashboard { padding: 1rem; }
   .widgets { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Manager Personal Work Co-Pilot & Notepad
+   ============================================================ */
+
+.personal-todo-section {
+  background: var(--surface-1);
+  border: var(--border-subtle);
+  border-radius: var(--r-xl);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all var(--t-base);
+  position: relative;
+  margin-bottom: 1.75rem;
+}
+
+.personal-todo-section:hover {
+  border-color: hsla(220,15%,100%,0.12);
+}
+
+.todo-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.todo-widget-header h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem !important;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.todo-widget-header h2 i {
+  color: var(--accent);
+}
+
+.ai-gen-btn {
+  background: var(--grad-amber) !important;
+  color: var(--text-inverse) !important;
+  border: none !important;
+  padding: 0.45rem 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all var(--t-base) !important;
+  box-shadow: 0 4px 15px rgba(255, 153, 0, 0.2);
+}
+
+.ai-gen-btn:hover:not(:disabled) {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 20px rgba(255, 153, 0, 0.35);
+}
+
+.ai-gen-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dual Pane Layout */
+.todo-dual-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.todo-half {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.todo-half-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Input Row */
+.todo-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.todo-input-row input {
+  flex: 1;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 0.5rem 0.875rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  outline: none;
+  transition: all var(--t-base);
+}
+
+.todo-input-row input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  background: var(--surface-3);
+}
+
+.todo-add-btn {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--surface-3);
+  border: var(--border-subtle);
+  color: var(--text-secondary);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  transition: all var(--t-base);
+}
+
+.todo-add-btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-inverse);
+}
+
+/* Checklist Scroll List */
+.todo-scroll-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-right: 0.25rem;
+  min-height: 80px;
+}
+
+.todo-scroll-list::-webkit-scrollbar {
+  width: 5px;
+}
+.todo-scroll-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.todo-scroll-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--r-full);
+}
+.todo-scroll-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* Checklist Row */
+.todo-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+}
+
+.todo-item-row:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.todo-item-check {
+  cursor: pointer;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.todo-item-check i {
+  color: var(--text-muted);
+  transition: all var(--t-fast);
+}
+
+.todo-item-check i.completed {
+  color: var(--color-success);
+  filter: drop-shadow(0 0 3px rgba(40, 167, 69, 0.3));
+}
+
+.todo-item-text {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.todo-item-row.completed .todo-item-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  opacity: 0.4;
+  transition: all var(--t-fast);
+  padding: 0.2rem;
+  border-radius: var(--r-sm);
+}
+
+.todo-item-row:hover .todo-delete-btn {
+  opacity: 1;
+}
+
+.todo-delete-btn:hover {
+  color: var(--color-danger);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+/* Empty checklist */
+.empty-state-mini {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-state-mini i {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.05);
+  display: block;
+}
+
+.empty-state-mini p {
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+/* Widget Footer */
+.todo-widget-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 0.625rem;
+}
+
+.clear-completed-link {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: color var(--t-fast);
+}
+
+.clear-completed-link:hover {
+  color: var(--color-warning);
+}
+
+/* Notepad Tab content */
+.notes-notepad-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.notepad-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.notes-textarea {
+  width: 100%;
+  height: 150px;
+  background: var(--surface-2);
+  border: var(--border-subtle);
+  border-radius: var(--r-md);
+  padding: 0.75rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  outline: none;
+  resize: none;
+  transition: all var(--t-base);
+}
+
+.notes-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  background: var(--surface-3);
+}
+
+.notes-convert-btn {
+  background: var(--surface-3);
+  border: var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all var(--t-base);
+}
+
+.notes-convert-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: rgba(255, 153, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.notes-convert-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive Dual layout */
+@media (max-width: 992px) {
+  .todo-dual-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}

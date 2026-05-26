@@ -2,14 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule, NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
-import { UserPreferences } from 'typescript';
-import { UserService } from '../createandmanage/user';
+import { AiService } from '../services/ai.service';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, CommonModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, CommonModule, FormsModule],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
@@ -20,7 +20,7 @@ export class Layout implements OnInit {
   isEmployeeView = false;
   isAdminView = false;
 
-  constructor(private router: Router, private http: HttpClient) {}
+  constructor(private router: Router, private http: HttpClient, private aiService: AiService) {}
 
   ngOnInit(): void {
     this.checkRoute();
@@ -66,5 +66,94 @@ export class Layout implements OnInit {
         this.router.navigate(['/']);
       }
     });
+  }
+
+  // ── AI Co-Pilot State & Controls ──
+  showAiDrawer = false;
+  aiMessages: { sender: 'user' | 'assistant'; text: string; time: Date }[] = [];
+  userInput = '';
+  isAiTyping = false;
+
+  toggleAiDrawer(): void {
+    this.showAiDrawer = !this.showAiDrawer;
+    if (this.showAiDrawer && this.aiMessages.length === 0) {
+      this.loadWelcomeMessage();
+    }
+  }
+
+  loadWelcomeMessage(): void {
+    this.isAiTyping = true;
+    setTimeout(() => {
+      this.isAiTyping = false;
+      const userStr = localStorage.getItem('user');
+      let firstName = 'Team Member';
+      if (userStr) {
+        try { firstName = JSON.parse(userStr).firstName || 'Team Member'; } catch(e) {}
+      }
+      this.aiMessages.push({
+        sender: 'assistant',
+        text: `### ⚡ Welcome to TaskFlow Co-Pilot, ${firstName}!
+I am your **AI Workflow Assistant**. I have fully scanned the local projects and tasks in your workspace.
+
+Ask me anything, or try these quick suggestions:
+* 📊 **"Summarize my workload"**
+* 🚀 **"Prioritize my today's tasks"**
+* 💡 **"Explain a bug checklist"**`,
+        time: new Date()
+      });
+      this.scrollAiToBottom();
+    }, 600);
+  }
+
+  sendAiMessage(): void {
+    if (!this.userInput.trim() || this.isAiTyping) return;
+
+    const userQuery = this.userInput;
+    this.aiMessages.push({
+      sender: 'user',
+      text: userQuery,
+      time: new Date()
+    });
+    this.userInput = '';
+    this.isAiTyping = true;
+    this.scrollAiToBottom();
+
+    this.aiService.chatWithAssistant(userQuery).subscribe({
+      next: (response) => {
+        this.isAiTyping = false;
+        this.aiMessages.push({
+          sender: 'assistant',
+          text: response,
+          time: new Date()
+        });
+        this.scrollAiToBottom();
+      },
+      error: (err) => {
+        this.isAiTyping = false;
+        this.aiMessages.push({
+          sender: 'assistant',
+          text: `### ⚠️ API Response Error
+I encountered a network issue contacting the AI interface. Here is my local offline response:
+
+*Ensure your local API backend is active! Let me know if you would like me to draft your priorities locally.*`,
+          time: new Date()
+        });
+        this.scrollAiToBottom();
+      }
+    });
+  }
+
+  askQuickQuestion(questionText: string): void {
+    this.userInput = questionText;
+    this.sendAiMessage();
+  }
+
+  scrollAiToBottom(): void {
+    setTimeout(() => {
+      const container = document.getElementById('ai-chat-messages-container');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }, 50);
   }
 }

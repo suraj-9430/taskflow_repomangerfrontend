@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Projectservice } from '../projects/projectservice';
+import { AiService } from '../../services/ai.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-tasks',
@@ -11,7 +14,11 @@ import { Projectservice } from '../projects/projectservice';
   styleUrl: './tasks.css',
 })
 export class Tasks implements OnInit {
-  constructor(private projectservice: Projectservice) {}
+  constructor(
+    private projectservice: Projectservice,
+    private aiService: AiService,
+    private http: HttpClient
+  ) {}
   // Search and Filter
   searchTerm: string = '';
   statusFilter: string = 'all';
@@ -310,5 +317,192 @@ export class Tasks implements OnInit {
         container.scrollTop = container.scrollHeight;
       }
     }, 50);
+  }
+
+  // ── Drag & Drop State & Event Handlers ──
+  draggedTask: any = null;
+  activeDragColumn: string | null = null;
+
+  onDragStart(task: any): void {
+    this.draggedTask = task;
+  }
+
+  onDragEnd(): void {
+    this.draggedTask = null;
+    this.activeDragColumn = null;
+  }
+
+  onDragOver(event: DragEvent, column: string): void {
+    event.preventDefault(); // Required to allow drop
+    this.activeDragColumn = column;
+  }
+
+  onDragLeave(event: DragEvent, column: string): void {
+    if (this.activeDragColumn === column) {
+      this.activeDragColumn = null;
+    }
+  }
+
+  onDrop(event: DragEvent, newStatus: string): void {
+    event.preventDefault();
+    this.activeDragColumn = null;
+    if (this.draggedTask && this.draggedTask.status !== newStatus) {
+      const task = this.draggedTask;
+      this.updateStatus(task, newStatus);
+      if (newStatus === 'Completed') {
+        this.playSuccessChime();
+      }
+    }
+    this.draggedTask = null;
+  }
+
+  playSuccessChime(): void {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const soundEnabled = user.settings?.preferences?.soundEffects ?? true;
+      if (!soundEnabled) return;
+
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      const context = new AudioContextClass();
+      if (context.state === 'suspended') {
+        context.resume();
+      }
+      
+      // Chime note 1 (C5)
+      const osc1 = context.createOscillator();
+      const gain1 = context.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(523.25, context.currentTime); 
+      gain1.gain.setValueAtTime(0.12, context.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
+      osc1.connect(gain1);
+      gain1.connect(context.destination);
+      osc1.start();
+      osc1.stop(context.currentTime + 0.3);
+
+      // Chime note 2 (E5, slightly delayed)
+      const osc2 = context.createOscillator();
+      const gain2 = context.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(659.25, context.currentTime + 0.08); 
+      gain2.gain.setValueAtTime(0.12, context.currentTime + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+      osc2.connect(gain2);
+      gain2.connect(context.destination);
+      osc2.start(context.currentTime + 0.08);
+      osc2.stop(context.currentTime + 0.4);
+    } catch (e) {
+      console.warn('Web Audio API error:', e);
+    }
+  }
+
+  // ── AI Workflow Assistant Functions ──
+  isGeneratingBreakdown: boolean = false;
+
+  generateAIBreakdown(): void {
+    if (!this.currentTask.title) {
+      alert('Please enter a task title first so the AI can analyze the scope.');
+      return;
+    }
+    this.isGeneratingBreakdown = true;
+    this.aiService.generateBreakdown(this.currentTask.title, this.currentTask.description).subscribe({
+      next: (subtasks) => {
+        this.isGeneratingBreakdown = false;
+        
+        let formattedChecklist = '\n\n📋 Suggested AI Subtasks:\n';
+        subtasks.forEach(step => {
+          formattedChecklist += `- [ ] ${step}\n`;
+        });
+        
+        if (!this.currentTask.description.includes('📋 Suggested AI Subtasks:')) {
+          this.currentTask.description = this.currentTask.description.trim() + formattedChecklist;
+        } else {
+          const parts = this.currentTask.description.split('📋 Suggested AI Subtasks:');
+          this.currentTask.description = parts[0].trim() + formattedChecklist;
+        }
+      },
+      error: (err) => {
+        this.isGeneratingBreakdown = false;
+        console.error('Failed to generate AI breakdown', err);
+      }
+    });
+  }
+
+  getActualDescription(description: string): string {
+    if (!description) return '';
+    const index = description.indexOf('📋 Suggested AI Subtasks:');
+    if (index === -1) return description;
+    return description.substring(0, index).trim();
+  }
+
+  hasAISuggestions(description: string): boolean {
+    if (!description) return false;
+    return description.includes('📋 Suggested AI Subtasks:');
+  }
+
+  getAISuggestions(description: string): { text: string; completed: boolean }[] {
+    if (!description) return [];
+    const index = description.indexOf('📋 Suggested AI Subtasks:');
+    if (index === -1) return [];
+    const suggestionPart = description.substring(index + '📋 Suggested AI Subtasks:'.length);
+    return suggestionPart
+      .split('\n')
+      .map(line => {
+        const trimmed = line.trim();
+        const match = trimmed.match(/^-\s*\[\s*([ xX])\s*\]\s*(.*)$/);
+        if (!match) return null;
+        return {
+          text: match[2].trim(),
+          completed: match[1].toLowerCase() === 'x'
+        };
+      })
+      .filter((item): item is { text: string; completed: boolean } => item !== null && item.text.length > 0);
+  }
+
+  toggleAISubtask(task: any, indexToToggle: number): void {
+    if (!task.description) return;
+    const headerIndex = task.description.indexOf('📋 Suggested AI Subtasks:');
+    if (headerIndex === -1) return;
+
+    const baseDescription = task.description.substring(0, headerIndex).trim();
+    const suggestionPart = task.description.substring(headerIndex + '📋 Suggested AI Subtasks:'.length);
+    
+    const lines = suggestionPart.split('\n');
+    let subtaskIndex = 0;
+    
+    const updatedLines = lines.map((line: string) => {
+      const trimmed = line.trim();
+      const match = trimmed.match(/^-\s*\[\s*([ xX])\s*\]\s*(.*)$/);
+      if (!match) return line;
+      
+      if (subtaskIndex === indexToToggle) {
+        const isCurrentCompleted = match[1].toLowerCase() === 'x';
+        const newStatus = isCurrentCompleted ? ' ' : 'x';
+        subtaskIndex++;
+        
+        if (newStatus === 'x') {
+          this.playSuccessChime();
+        }
+        
+        return `- [${newStatus}] ${match[2].trim()}`;
+      }
+      
+      subtaskIndex++;
+      return line;
+    });
+
+    const updatedDescription = baseDescription + '\n\n📋 Suggested AI Subtasks:\n' + updatedLines.join('\n');
+    task.description = updatedDescription;
+
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    const taskId = task.id || task._id;
+    
+    this.http.put<any>(`${environment.apiUrl}/tasks/${taskId}`, { description: updatedDescription }, { headers }).subscribe({
+      next: () => console.log('Interactive subtask state successfully updated in MongoDB!'),
+      error: (err: any) => console.error('Failed to update subtask check state in database', err)
+    });
   }
 }

@@ -5,6 +5,12 @@
     <h1>Admin <span>Dashboard</span></h1>
 
     <div class="header-right">
+      <!-- Compact Punch In/Out button -->
+      <div class="punch-status-wrapper" [class.loading]="isCheckingLocation" (click)="togglePunch()" [title]="getPunchTitle()">
+        <span class="pulse-dot" [class.clocked-in-office]="clockStatus === 'Office Present'" [class.clocked-in-remote]="clockStatus === 'Remote Present'"></span>
+        <i class="fa-solid" [class.fa-fingerprint]="!isCheckingLocation" [class.fa-spinner]="isCheckingLocation" [class.fa-spin]="isCheckingLocation"></i>
+        <span class="punch-label">{{ clockStatus === 'Clocked Out' ? 'Punch In' : 'Punch Out' }}</span>
+      </div>
       <div class="notification-wrapper" routerLink="/dashboard/notifications" style="cursor: pointer;">
         <i class="fa-solid fa-bell notification-icon"></i>
         @if (unreadCount > 0) {

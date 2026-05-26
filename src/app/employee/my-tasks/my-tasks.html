@@ -55,57 +55,178 @@
     </div>
   </div>
 
-  <!-- Tasks List -->
-  <div class="tasks-container">
-    @for(task of filteredTasks; track task.id) {
-    <div class="task-card" [class.completed]="task.status === 'Completed'" [class.overdue]="isOverdue(task.dueDate, task.status)">
-      <div class="task-priority-bar" [ngClass]="getPriorityClass(task.priority)"></div>
-      
-      <div class="task-content">
-        <div class="task-top">
-          <span class="project-tag">{{ task.projectName }}</span>
-          <span class="priority-badge" [ngClass]="getPriorityClass(task.priority)">{{ task.priority }}</span>
-          @if(isOverdue(task.dueDate, task.status)) {
-          <span class="overdue-badge"><i class="fas fa-exclamation-triangle"></i> Overdue</span>
-          }
-        </div>
-        
-        <h3 class="task-title">{{ task.title }}</h3>
-        <p class="task-description">{{ task.description }}</p>
-        
-        <div class="task-footer">
-          <div class="task-dates">
-            <span class="due-date" [class.overdue]="isOverdue(task.dueDate, task.status)">
-              <i class="fas fa-calendar-alt"></i> Due: {{ task.dueDate }}
-            </span>
-            <span class="created-date">
-              <i class="fas fa-clock"></i> Created: {{ task.createdDate }}
-            </span>
+  <!-- Kanban Board -->
+  <div class="kanban-board">
+    <!-- To Do Column -->
+    <div class="kanban-column" [class.column-dragover]="activeDragColumn === 'To Do'">
+      <div class="column-header todo">
+        <h3><i class="fas fa-clock"></i> To Do</h3>
+        <span class="task-count">{{ getTasksByStatus('To Do').length }}</span>
+      </div>
+      <div class="column-body" (dragover)="onDragOver($event, 'To Do')" (dragleave)="onDragLeave($event, 'To Do')" (drop)="onDrop($event, 'To Do')">
+        @for(task of getTasksByStatus('To Do'); track task.id) {
+        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?.id === task.id">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ task.projectName }}</span>
           </div>
-          <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
-            <i class="fas fa-comments"></i> Discussion
-          </button>
-        </div>
-      </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ getActualDescription(task.description) }}</p>
+          
+          @if (hasAISuggestions(task.description)) {
+            <div class="ai-checklist-container" (click)="$event.stopPropagation()">
+              <div class="ai-checklist-title">
+                <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> AI Suggested Subtasks
+              </div>
+              <ul class="ai-checklist-steps">
+                @for (step of getAISuggestions(task.description); track step.text; let i = $index) {
+                  <li (click)="toggleAISubtask(task, i)" style="cursor: pointer;">
+                    <i class="check-box-icon" 
+                       [class.fa-regular]="!step.completed" 
+                       [class.fa-square]="!step.completed" 
+                       [class.fa-solid]="step.completed" 
+                       [class.fa-square-check]="step.completed" 
+                       [class.completed]="step.completed"></i>
+                    <span [class.completed]="step.completed">{{ step.text }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+          
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem;">
+            <button class="ai-spark-btn" (click)="generateAIBreakdown(task)" [disabled]="isGeneratingBreakdown" type="button" style="background: var(--accent-dim); border: var(--border-accent); color: var(--accent); font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; transition: all var(--t-fast);">
+              <i class="fas fa-wand-magic-sparkles"></i> AI Checklist
+            </button>
+          </div>
 
-      <div class="task-status-section">
-        <label>Update Status:</label>
-        <select class="status-select" [ngClass]="getStatusClass(task.status)" [(ngModel)]="task.status" (change)="onStatusChange(task)">
-          <option value="To Do">To Do</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Completed">Completed</option>
-        </select>
+          <div class="task-meta">
+            <span class="due-date" [class.overdue]="isOverdue(task.dueDate, task.status)"><i class="fas fa-calendar"></i> Due: {{ task.dueDate }}</span>
+          </div>
+          <div class="task-actions">
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i> Discussion
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('To Do').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
       </div>
     </div>
-    }
-    
-    @if(filteredTasks.length === 0) {
-    <div class="empty-state">
-      <i class="fas fa-clipboard-check"></i>
-      <h3>No tasks found</h3>
-      <p>Try adjusting your search or filter criteria</p>
+
+    <!-- In Progress Column -->
+    <div class="kanban-column" [class.column-dragover]="activeDragColumn === 'In Progress'">
+      <div class="column-header progress">
+        <h3><i class="fas fa-spinner"></i> In Progress</h3>
+        <span class="task-count">{{ getTasksByStatus('In Progress').length }}</span>
+      </div>
+      <div class="column-body" (dragover)="onDragOver($event, 'In Progress')" (dragleave)="onDragLeave($event, 'In Progress')" (drop)="onDrop($event, 'In Progress')">
+        @for(task of getTasksByStatus('In Progress'); track task.id) {
+        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?.id === task.id">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ task.projectName }}</span>
+          </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ getActualDescription(task.description) }}</p>
+
+          @if (hasAISuggestions(task.description)) {
+            <div class="ai-checklist-container" (click)="$event.stopPropagation()">
+              <div class="ai-checklist-title">
+                <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> AI Suggested Subtasks
+              </div>
+              <ul class="ai-checklist-steps">
+                @for (step of getAISuggestions(task.description); track step.text; let i = $index) {
+                  <li (click)="toggleAISubtask(task, i)" style="cursor: pointer;">
+                    <i class="check-box-icon" 
+                       [class.fa-regular]="!step.completed" 
+                       [class.fa-square]="!step.completed" 
+                       [class.fa-solid]="step.completed" 
+                       [class.fa-square-check]="step.completed" 
+                       [class.completed]="step.completed"></i>
+                    <span [class.completed]="step.completed">{{ step.text }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem;">
+            <button class="ai-spark-btn" (click)="generateAIBreakdown(task)" [disabled]="isGeneratingBreakdown" type="button" style="background: var(--accent-dim); border: var(--border-accent); color: var(--accent); font-size: 0.65rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: var(--r-sm); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; transition: all var(--t-fast);">
+              <i class="fas fa-wand-magic-sparkles"></i> AI Checklist
+            </button>
+          </div>
+
+          <div class="task-meta">
+            <span class="due-date" [class.overdue]="isOverdue(task.dueDate, task.status)"><i class="fas fa-calendar"></i> Due: {{ task.dueDate }}</span>
+          </div>
+          <div class="task-actions">
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i> Discussion
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('In Progress').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
+      </div>
     </div>
-    }
+
+    <!-- Completed Column -->
+    <div class="kanban-column" [class.column-dragover]="activeDragColumn === 'Completed'">
+      <div class="column-header completed">
+        <h3><i class="fas fa-check-circle"></i> Completed</h3>
+        <span class="task-count">{{ getTasksByStatus('Completed').length }}</span>
+      </div>
+      <div class="column-body" (dragover)="onDragOver($event, 'Completed')" (dragleave)="onDragLeave($event, 'Completed')" (drop)="onDrop($event, 'Completed')">
+        @for(task of getTasksByStatus('Completed'); track task.id) {
+        <div class="task-card completed" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?.id === task.id">
+          <div class="task-header">
+            <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
+            <span class="task-project">{{ task.projectName }}</span>
+          </div>
+          <h4 class="task-title">{{ task.title }}</h4>
+          <p class="task-desc">{{ getActualDescription(task.description) }}</p>
+          
+          @if (hasAISuggestions(task.description)) {
+            <div class="ai-checklist-container" (click)="$event.stopPropagation()">
+              <div class="ai-checklist-title">
+                <i class="fa-solid fa-wand-magic-sparkles text-accent"></i> AI Suggested Subtasks
+              </div>
+              <ul class="ai-checklist-steps">
+                @for (step of getAISuggestions(task.description); track step.text; let i = $index) {
+                  <li (click)="toggleAISubtask(task, i)" style="cursor: pointer;">
+                    <i class="check-box-icon" 
+                       [class.fa-regular]="!step.completed" 
+                       [class.fa-square]="!step.completed" 
+                       [class.fa-solid]="step.completed" 
+                       [class.fa-square-check]="step.completed" 
+                       [class.completed]="step.completed"></i>
+                    <span [class.completed]="step.completed">{{ step.text }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+          
+          <div class="task-meta">
+            <span class="due-date" [class.overdue]="isOverdue(task.dueDate, task.status)"><i class="fas fa-calendar"></i> Completed</span>
+          </div>
+          <div class="task-actions">
+            <button class="chat-btn" (click)="openChatModal(task)" title="Task Discussion">
+              <i class="fas fa-comments"></i> Discussion
+            </button>
+          </div>
+        </div>
+        }
+        @if(getTasksByStatus('Completed').length === 0) {
+        <div class="empty-column">No tasks</div>
+        }
+      </div>
+    </div>
   </div>
 
   <!-- Task Discussion Chat Modal -->

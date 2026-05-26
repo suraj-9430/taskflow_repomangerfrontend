@@ -3,6 +3,12 @@
   <div class="header">
     <h1>Manager Dashboard</h1>
     <div class="header-right">
+      <!-- Compact Punch In/Out button -->
+      <div class="punch-status-wrapper" [class.loading]="isCheckingLocation" (click)="togglePunch()" [title]="getPunchTitle()">
+        <span class="pulse-dot" [class.clocked-in-office]="clockStatus === 'Office Present'" [class.clocked-in-remote]="clockStatus === 'Remote Present'"></span>
+        <i class="fa-solid" [class.fa-fingerprint]="!isCheckingLocation" [class.fa-spinner]="isCheckingLocation" [class.fa-spin]="isCheckingLocation"></i>
+        <span class="punch-label">{{ clockStatus === 'Clocked Out' ? 'Punch In' : 'Punch Out' }}</span>
+      </div>
       <div class="notification-wrapper" routerLink="/manager-dashboard/notifications" style="cursor: pointer;">
         <i class="fa-solid fa-bell notification-icon"></i>
         @if (unreadCount > 0) {
@@ -122,6 +128,82 @@
           <span class="task-status" [ngClass]="getTaskStatusClass(task.status)">{{ task.status }}</span>
         </div>
         }
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal To-Do Co-Pilot & Meeting Notes Pad -->
+  <div class="section personal-todo-section wide-todo-section">
+    <div class="todo-widget-header">
+      <h2><i class="fa-solid fa-wand-magic-sparkles text-accent"></i> Manager Personal Work Co-Pilot</h2>
+      <button class="ai-gen-btn" (click)="generateAIPersonalTodos()" [disabled]="isGeneratingPersonalTodos" [class.loading]="isGeneratingPersonalTodos">
+        <i class="fa-solid" [class.fa-robot]="!isGeneratingPersonalTodos" [class.fa-spinner]="isGeneratingPersonalTodos" [class.fa-spin]="isGeneratingPersonalTodos"></i>
+        <span>{{ isGeneratingPersonalTodos ? 'Analyzing Active Backlog...' : '🤖 Plan My Day' }}</span>
+      </button>
+    </div>
+
+    <div class="todo-dual-container">
+      <!-- Left side: Checklist -->
+      <div class="todo-half">
+        <div class="todo-half-title">
+          <i class="fa-solid fa-list-check text-accent"></i> Daily Checklist
+        </div>
+
+        <div class="todo-input-row">
+          <input type="text" [(ngModel)]="newTodoText" placeholder="Jot down a quick personal task..." (keyup.enter)="addPersonalTodo()">
+          <button class="todo-add-btn" (click)="addPersonalTodo()" [disabled]="!newTodoText.trim()">
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        </div>
+
+        <div class="todo-scroll-list">
+          @for (todo of personalTodos; track todo.id) {
+            <div class="todo-item-row" [class.completed]="todo.completed">
+              <div class="todo-item-check" (click)="togglePersonalTodo(todo)">
+                <i class="check-box-icon" 
+                   [class.fa-regular]="!todo.completed" 
+                   [class.fa-square]="!todo.completed" 
+                   [class.fa-solid]="todo.completed" 
+                   [class.fa-square-check]="todo.completed" 
+                   [class.completed]="todo.completed"></i>
+              </div>
+              <span class="todo-item-text">{{ todo.text }}</span>
+              <button class="todo-delete-btn" (click)="deletePersonalTodo(todo.id)" title="Remove Item">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          }
+
+          @if (personalTodos.length === 0) {
+            <div class="empty-state-mini">
+              <i class="fa-solid fa-clipboard-list"></i>
+              <p>Your checklist is clean. Generate a smart plan or write some meeting notes!</p>
+            </div>
+          }
+        </div>
+
+        @if (personalTodos.length > 0) {
+          <div class="todo-widget-footer">
+            <span>{{ personalTodos.length }} item{{ personalTodos.length > 1 ? 's' : '' }} total</span>
+            <button class="clear-completed-link" (click)="clearCompletedPersonalTodos()">
+              <i class="fa-solid fa-broom"></i> Clear Finished
+            </button>
+          </div>
+        }
+      </div>
+
+      <!-- Right side: Meeting Notes -->
+      <div class="todo-half">
+        <div class="todo-half-title">
+          <i class="fa-solid fa-pen-to-square text-accent"></i> Live Meeting Notes
+        </div>
+        <div class="notes-notepad-container">
+          <p class="notepad-sub">Auto-saving meeting pad. Click the button to instantly convert lines to checklists!</p>
+          <textarea class="notes-textarea" [(ngModel)]="meetingNotes" (ngModelChange)="saveMeetingNotes()" placeholder="Discuss trade finance requirements...&#10;- review dashboard estimations&#10;- approve suraj's remote work request&#10;- assign outstanding frontend task..."></textarea>
+          <button class="notes-convert-btn" (click)="convertNotesToTodos()" [disabled]="!meetingNotes.trim()">
+            <i class="fa-solid fa-bolt-lightning text-accent"></i> Convert Notes to To-Dos
+          </button>
+        </div>
       </div>
     </div>
   </div>
