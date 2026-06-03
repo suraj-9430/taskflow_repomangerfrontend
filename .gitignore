@@ -45,3 +45,6 @@ Thumbs.db
 # Environments and Secrets
 .env
 /src/environments/environment.ts
+
+# Capacitor / Mobile
+/android

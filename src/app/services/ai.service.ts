@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../environments/environment';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map, catchError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -12,34 +12,62 @@ export class AiService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Returns the Authorization header with JWT token from localStorage.
+   */
+  private getAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('token');
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+  }
+
+  /**
    * Generates a subtask checklist for a given task title and description.
-   * If a backend AI service is unavailable, it uses local semantic rules to generate relevant checklists.
+   * Calls the real Gemini-powered backend endpoint.
+   * Falls back to local keyword-based generation if the API is unavailable.
    */
   generateBreakdown(title: string, description: string): Observable<string[]> {
-    // If a real backend endpoint is implemented, we can call it:
-    // return this.http.post<string[]>(`${this.apiUrl}/ai/breakdown`, { title, description });
-    
-    // For robust immediate frontend execution:
-    const mockChecklists = this.getLocalChecklist(title, description);
-    return of(mockChecklists).pipe(delay(1200)); // Simulate networking latency beautifully
+    return this.http
+      .post<{ success: boolean; data: string[] }>(
+        `${this.apiUrl}/ai/breakdown`,
+        { title, description },
+        { headers: this.getAuthHeaders() }
+      )
+      .pipe(
+        map((res) => res.data),
+        catchError((err) => {
+          console.warn('AI backend unavailable for breakdown, using local fallback:', err.message || err);
+          return of(this.getLocalChecklist(title, description)).pipe(delay(500));
+        })
+      );
   }
 
   /**
-   * Responds to user chat messages.
-   * Leverages a highly advanced "Local Intelligence Engine" to scan localStorage data
-   * and provide contextually accurate responses about the actual current user, tasks, and projects.
+   * Responds to user chat messages via the Gemini-powered backend.
+   * Falls back to local intelligence engine if the API is unavailable.
    */
   chatWithAssistant(message: string): Observable<string> {
-    // If a real backend endpoint is implemented:
-    // return this.http.post<string>(`${this.apiUrl}/ai/chat`, { message });
-
-    // Local Intelligence Engine fallback
-    const response = this.processLocalContextQuery(message);
-    return of(response).pipe(delay(1000));
+    return this.http
+      .post<{ success: boolean; reply: string }>(
+        `${this.apiUrl}/ai/chat`,
+        { message },
+        { headers: this.getAuthHeaders() }
+      )
+      .pipe(
+        map((res) => res.reply),
+        catchError((err) => {
+          console.warn('AI backend unavailable for chat, using local fallback:', err.message || err);
+          return of(this.processLocalContextQuery(message)).pipe(delay(500));
+        })
+      );
   }
 
+  // ─────────────────────────────────────────────
+  // LOCAL FALLBACK METHODS (used when backend is unreachable)
+  // ─────────────────────────────────────────────
+
   /**
-   * Generates highly specific checklists based on keywords in the task title.
+   * Generates checklists based on keywords in the task title (offline fallback).
    */
   private getLocalChecklist(title: string, description: string): string[] {
     const t = title.toLowerCase();
@@ -112,7 +140,7 @@ export class AiService {
   }
 
   /**
-   * High fidelity local intelligence reasoning engine. Parses context.
+   * High fidelity local intelligence reasoning engine (offline fallback).
    */
   private processLocalContextQuery(message: string): string {
     const msg = message.toLowerCase();
@@ -135,63 +163,29 @@ export class AiService {
 
     // 1. HELP / GREETING
     if (msg.includes('hello') || msg.includes('hi ') || msg.includes('hey') || msg.includes('help')) {
-      return `### ⚡ Welcome, ${user.firstName}!
-I am your **TaskFlow AI Co-Pilot**. I have scanned your workspace and am ready to assist you.
-
-Here are some helpful commands you can ask me:
-* 📊 **"Summarize my workload"** — Get a detailed breakdown of your projects and task distribution.
-* 🚀 **"Prioritize my day"** — See high-priority tasks and recommendations on what to build first.
-* ⚠️ **"Show overdue items"** — Display warnings about tasks approaching or past their deadlines.
-* 💡 **"Suggest feature improvements"** — Get design and architectural advice for the current page.
-
-*Feel free to type anything else! How can I help you accelerate your workflow today?*`;
+      return `### ⚡ Welcome, ${user.firstName}!\nI am your **TaskFlow AI Co-Pilot**. I have scanned your workspace and am ready to assist you.\n\nHere are some helpful commands you can ask me:\n* 📊 **"Summarize my workload"** — Get a detailed breakdown of your projects and task distribution.\n* 🚀 **"Prioritize my day"** — See high-priority tasks and recommendations on what to build first.\n* ⚠️ **"Show overdue items"** — Display warnings about tasks approaching or past their deadlines.\n* 💡 **"Suggest feature improvements"** — Get design and architectural advice for the current page.\n\n*Feel free to type anything else! How can I help you accelerate your workflow today?*`;
     }
 
     // 2. WORKLOAD SUMMARY
     if (msg.includes('workload') || msg.includes('summary') || msg.includes('dashboard') || msg.includes('status')) {
-      return `### 📊 Workspace Status Report
-Here is an overview of the Active Workspace analyzed for **${userName}** (${user.role}):
-
-* **Active Role**: \`${user.role}\`
-* **Task Status Summary**:
-  * 🗂️ **To Do**: Ready to pull.
-  * ⚙️ **In Progress**: Actively being coded.
-  * ✅ **Completed**: Successfully deployed with audio success chimes enabled!
-* **Aesthetic Configuration**: Sleek **Refined Dark Industrial** theme running on CSS variables with sound effects active.
-
-*💡 Tip: Drag and drop cards on your task board to instantly sync progress and trigger structural status updates.*`;
+      return `### 📊 Workspace Status Report\nHere is an overview of the Active Workspace analyzed for **${userName}** (${user.role}):\n\n* **Active Role**: \`${user.role}\`\n* **Task Status Summary**:\n  * 🗂️ **To Do**: Ready to pull.\n  * ⚙️ **In Progress**: Actively being coded.\n  * ✅ **Completed**: Successfully deployed with audio success chimes enabled!\n* **Aesthetic Configuration**: Sleek **Refined Dark Industrial** theme running on CSS variables with sound effects active.\n\n*💡 Tip: Drag and drop cards on your task board to instantly sync progress and trigger structural status updates.*`;
     }
 
     // 3. PRIORITIZE
     if (msg.includes('prioritize') || msg.includes('priority') || msg.includes('focus') || msg.includes('today')) {
-      return `### 🚀 Recommended Daily Focus Order
-Based on priority matrices and due dates, here is your path to maximum output today:
-
-1. **🔥 High-Priority Tasks first**: Address items marked High priority to clear critical bottlenecks.
-2. **⏱️ Time Logging Strategy**: Start your workflow by pulling tasks from **To Do** into **In Progress** via the new Drag-and-Drop board.
-3. **💬 Collaboration check**: Review your **Notifications** tab to answer comments left by team members in Task Discussions.
-
-*Would you like me to generate a checklist breakdown for one of your tasks? Type **"breakdown [task name]"**!*`;
+      return `### 🚀 Recommended Daily Focus Order\nBased on priority matrices and due dates, here is your path to maximum output today:\n\n1. **🔥 High-Priority Tasks first**: Address items marked High priority to clear critical bottlenecks.\n2. **⏱️ Time Logging Strategy**: Start your workflow by pulling tasks from **To Do** into **In Progress** via the new Drag-and-Drop board.\n3. **💬 Collaboration check**: Review your **Notifications** tab to answer comments left by team members in Task Discussions.\n\n*Would you like me to generate a checklist breakdown for one of your tasks? Type **"breakdown [task name]"**!*`;
     }
 
     // 4. OVERDUE
     if (msg.includes('overdue') || msg.includes('deadline') || msg.includes('calendar') || msg.includes('due')) {
-      return `### ⚠️ Deadline Alert System
-I have scanned your active task dates:
-
-* **Urgency Rating**: Good. No high-risk overdue issues detected in local memory.
-* **Pro-tip**: Ensure you update **Due Dates** when creating or editing tasks so that automatic notification alerts trigger 24 hours prior to deadline arrival!
-* Keep your **Kanban board** updated by dropping finished cards into the **Completed** column.`;
+      return `### ⚠️ Deadline Alert System\nI have scanned your active task dates:\n\n* **Urgency Rating**: Good. No high-risk overdue issues detected in local memory.\n* **Pro-tip**: Ensure you update **Due Dates** when creating or editing tasks so that automatic notification alerts trigger 24 hours prior to deadline arrival!\n* Keep your **Kanban board** updated by dropping finished cards into the **Completed** column.`;
     }
 
     // 5. BREAKDOWN SPECIFIC
     if (msg.includes('breakdown') || msg.includes('checklist') || msg.includes('steps')) {
       const taskName = message.replace(/breakdown|checklist|steps/gi, '').trim() || 'Core Integration';
       const steps = this.getLocalChecklist(taskName, '');
-      let response = `### 🤖 AI Task Breakdown: "${taskName}"
-I have analyzed the technical scope for this item. Here is the suggested implementation checklist:
-
-`;
+      let response = `### 🤖 AI Task Breakdown: "${taskName}"\nI have analyzed the technical scope for this item. Here is the suggested implementation checklist:\n\n`;
       steps.forEach((step, i) => {
         response += `${i + 1}. **[ ]** ${step}\n`;
       });
@@ -200,14 +194,6 @@ I have analyzed the technical scope for this item. Here is the suggested impleme
     }
 
     // 6. DEFAULT GENERAL CHAT RESPONSE
-    return `### 🤖 TaskFlow AI Assistant
-*"Interesting question! As your Co-Pilot, I'm here to streamline your workflow."*
-
-I can help you:
-* Plan your next coding steps
-* Breakdown complex objectives into checklists
-* Review structural priorities
-
-Please ask about **workload**, **prioritization**, or type **"breakdown [task topic]"** to generate an instant technical checklist!`;
+    return `### 🤖 TaskFlow AI Assistant\n*"Interesting question! As your Co-Pilot, I'm here to streamline your workflow."*\n\nI can help you:\n* Plan your next coding steps\n* Breakdown complex objectives into checklists\n* Review structural priorities\n\nPlease ask about **workload**, **prioritization**, or type **"breakdown [task topic]"** to generate an instant technical checklist!`;
   }
 }
