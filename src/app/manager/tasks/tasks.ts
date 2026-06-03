@@ -5,6 +5,7 @@ import { Projectservice } from '../projects/projectservice';
 import { AiService } from '../../services/ai.service';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { SocketService } from '../../services/socket.service';
 
 @Component({
   selector: 'app-tasks',
@@ -17,7 +18,8 @@ export class Tasks implements OnInit {
   constructor(
     private projectservice: Projectservice,
     private aiService: AiService,
-    private http: HttpClient
+    private http: HttpClient,
+    private socketService: SocketService
   ) {}
   // Search and Filter
   searchTerm: string = '';
@@ -49,6 +51,7 @@ export class Tasks implements OnInit {
   ngOnInit(): void {
     this.filteredTasks = [...this.tasks];
     this.loadData();
+    this.socketService.connect();
   }
 
   getLoggedInUserId(): string {
@@ -267,9 +270,26 @@ export class Tasks implements OnInit {
     this.newMessageText = '';
     this.showChatModal = true;
     this.loadChatComments();
+
+    // Socket.io room joining
+    this.socketService.joinTask(task._id);
+    this.socketService.onNewComment((comment: any) => {
+      // Avoid duplicates if the message was already added via HTTP response
+      if (comment && comment.taskId === this.activeChatTask?._id) {
+        const exists = this.chatComments.some(c => c._id === comment._id);
+        if (!exists) {
+          this.chatComments.push(comment);
+          this.scrollToBottom();
+        }
+      }
+    });
   }
 
   closeChatModal(): void {
+    if (this.activeChatTask) {
+      this.socketService.leaveTask(this.activeChatTask._id);
+    }
+    this.socketService.offNewComment();
     this.showChatModal = false;
     this.activeChatTask = null;
     this.chatComments = [];
@@ -300,8 +320,14 @@ export class Tasks implements OnInit {
       next: (res: any) => {
         this.newMessageText = '';
         this.isSendingMessage = false;
-        this.chatComments.push(res.data);
-        this.scrollToBottom();
+        
+        if (res.data) {
+          const exists = this.chatComments.some(c => c._id === res.data._id);
+          if (!exists) {
+            this.chatComments.push(res.data);
+            this.scrollToBottom();
+          }
+        }
       },
       error: err => {
         console.error('Error sending message', err);

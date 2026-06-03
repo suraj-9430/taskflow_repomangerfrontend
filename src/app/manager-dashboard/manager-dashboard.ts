@@ -239,8 +239,8 @@ export class ManagerDashboard implements OnInit {
   }
 
   // ── Geo-Fenced Compact Punch Logic ──
-  officeCoords = { lat: 17.440861, lng: 78.395125 };
-  geofenceRadius = 150;
+  officeCoords = { lat: 17.443500, lng: 78.385000 };
+  geofenceRadius = 10;
   clockStatus = 'Clocked Out';
   isCheckingLocation = false;
   pendingCoords = { lat: 0, lng: 0 };
@@ -290,7 +290,7 @@ export class ManagerDashboard implements OnInit {
         this.isCheckingLocation = false;
         console.warn('GPS query blocked or timed out, triggering fallback.');
         if (confirm('📡 GPS coordinates check blocked or timed out.\n\nWould you like to simulate check-in inside the Office Geofence? (Cancel to simulate out-of-bounds)')) {
-          this.verifyLocation(17.440861, 78.395125); // Office
+          this.verifyLocation(17.443500, 78.385000); // Office
         } else {
           this.verifyLocation(17.4520, 78.4060); // Remote
         }

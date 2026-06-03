@@ -1,0 +1,163 @@
+<div class="leave-container">
+  <div class="header">
+    <h1>Leave Management</h1>
+    <button class="btn-primary" (click)="openApplyModal()">Apply for Leave</button>
+  </div>
+
+  <div class="balances-grid">
+    <div class="balance-card">
+      <div class="icon sick">
+        <i class="fa-solid fa-notes-medical"></i>
+      </div>
+      <div class="details">
+        <h3>Sick Leave</h3>
+        <p class="count">{{ leaveBalances.sick }} days remaining</p>
+      </div>
+    </div>
+    
+    <div class="balance-card">
+      <div class="icon casual">
+        <i class="fa-solid fa-umbrella-beach"></i>
+      </div>
+      <div class="details">
+        <h3>Casual Leave</h3>
+        <p class="count">{{ leaveBalances.casual }} days remaining</p>
+      </div>
+    </div>
+
+    <div class="balance-card">
+      <div class="icon earned">
+        <i class="fa-solid fa-medal"></i>
+      </div>
+      <div class="details">
+        <h3>Earned Leave</h3>
+        <p class="count">{{ leaveBalances.earned }} days remaining</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-sections">
+    <div class="section my-leaves">
+      <h2>My Leave History</h2>
+      <div class="table-wrapper">
+        <table *ngIf="myLeaves.length > 0; else noLeaves">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Date Range</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Applied On</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leave of myLeaves">
+              <td class="capitalize">{{ leave.leaveType }}</td>
+              <td>{{ formatDate(leave.startDate) }} - {{ formatDate(leave.endDate) }}</td>
+              <td>{{ leave.reason }}</td>
+              <td><span class="status-badge" [ngClass]="getStatusClass(leave.status)">{{ leave.status }}</span></td>
+              <td>{{ formatDate(leave.appliedAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noLeaves>
+          <div class="empty-state">No leave history found.</div>
+        </ng-template>
+      </div>
+    </div>
+
+    <div class="section pending-leaves" *ngIf="isAdminOrManager">
+      <h2>Pending Approvals</h2>
+      <div class="table-wrapper">
+        <table *ngIf="pendingLeaves.length > 0; else noPending">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Type</th>
+              <th>Date Range</th>
+              <th>Reason</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let leave of pendingLeaves">
+              <td>
+                <div class="emp-info">
+                  <span class="emp-name">{{ leave.userId?.firstName }} {{ leave.userId?.lastName }}</span>
+                  <span class="emp-designation">{{ leave.userId?.designation }}</span>
+                </div>
+              </td>
+              <td class="capitalize">{{ leave.leaveType }}</td>
+              <td>{{ formatDate(leave.startDate) }} - {{ formatDate(leave.endDate) }}</td>
+              <td>{{ leave.reason }}</td>
+              <td class="actions">
+                <button class="btn-icon approve" (click)="approveLeave(leave._id)" title="Approve">
+                  <i class="fa-solid fa-check"></i>
+                </button>
+                <button class="btn-icon reject" (click)="rejectLeave(leave._id)" title="Reject">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #noPending>
+          <div class="empty-state">No pending leave requests.</div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Apply Leave Modal -->
+  <div class="modal-backdrop" *ngIf="showApplyModal" (click)="closeApplyModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Apply for Leave</h2>
+        <button class="close-btn" (click)="closeApplyModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Leave Type</label>
+          <select [(ngModel)]="applyForm.leaveType" class="form-control">
+            <option value="sick">Sick Leave ({{ leaveBalances.sick }} days)</option>
+            <option value="casual">Casual Leave ({{ leaveBalances.casual }} days)</option>
+            <option value="earned">Earned Leave ({{ leaveBalances.earned }} days)</option>
+          </select>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="applyForm.startDate" [min]="todayDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" [(ngModel)]="applyForm.endDate" [min]="applyForm.startDate || todayDate" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Reason</label>
+          <textarea [(ngModel)]="applyForm.reason" rows="3" class="form-control" placeholder="Explain your reason..."></textarea>
+        </div>
+      </div>
+
+      <div class="balance-warning" *ngIf="isBalanceExceeded()">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Insufficient balance! You're requesting {{ getRequestedDays() }} day(s) but only have {{ getAvailableBalance() }} {{ applyForm.leaveType }} leave day(s) remaining.</span>
+      </div>
+
+      <div class="days-info" *ngIf="getRequestedDays() > 0 && !isBalanceExceeded()">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Requesting {{ getRequestedDays() }} day(s) — {{ getAvailableBalance() }} {{ applyForm.leaveType }} leave day(s) available.</span>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeApplyModal()">Cancel</button>
+        <button class="btn-primary" (click)="submitLeave()" [disabled]="isBalanceExceeded()">Submit Application</button>
+      </div>
+    </div>
+  </div>
+</div>

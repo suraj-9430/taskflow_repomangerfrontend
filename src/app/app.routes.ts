@@ -9,11 +9,13 @@ import { Projects } from './manager/projects/projects';
 import { Tasks } from './manager/tasks/tasks';
 import { Employees } from './manager/employees/employees';
 import { EmployeeDashboard } from './employee-dashboard/employee-dashboard';
+import { LeaveManagement } from './leave-management/leave-management';
 import { MyTasks } from './employee/my-tasks/my-tasks';
 import { MyProjects } from './employee/my-projects/my-projects';
 import { Settings } from './settings/settings';
 import { Notifications } from './notifications/notifications';
 import { AttendanceComponent } from './attendance/attendance';
+import { ErrorPage } from './error-page/error-page';
 
 export const routes: Routes = [
   { path:"", loadComponent: () => import('./login-page/login-page').then(m => m.LoginPage) ,pathMatch:'full'},
@@ -27,7 +29,8 @@ export const routes: Routes = [
       { path: 'action', component: Createandmanage },
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
-      { path: 'attendance', component: AttendanceComponent }
+      { path: 'attendance', component: AttendanceComponent },
+      { path: 'leave', component: LeaveManagement }
     ]
   },
 
@@ -42,7 +45,8 @@ export const routes: Routes = [
       { path: 'employees', component: Employees },
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
-      { path: 'attendance', component: AttendanceComponent }
+      { path: 'attendance', component: AttendanceComponent },
+      { path: 'leave', component: LeaveManagement }
     ]
   },
 
@@ -56,10 +60,11 @@ export const routes: Routes = [
       { path: 'my-projects', component: MyProjects },
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
-      { path: 'attendance', component: AttendanceComponent }
+      { path: 'attendance', component: AttendanceComponent },
+      { path: 'leave', component: LeaveManagement }
     ]
   },
 
-  { path: '**', redirectTo: '' }
+  { path: '**', component: ErrorPage }
 ];
 

@@ -44,8 +44,8 @@ export class EmployeeDashboard implements OnInit {
   isSendingMessage: boolean = false;
 
   // ── Geo-Fenced Coordinates Attendance System State ──
-  officeCoords = { lat: 17.440861, lng: 78.395125 }; // Configurable Target Office Coordinates (User custom location)
-  geofenceRadius = 150; // Geofencing boundary in meters
+  officeCoords = { lat: 17.443500, lng: 78.385000 }; // Configurable Target Office Coordinates (User custom location)
+  geofenceRadius = 10; // Geofencing boundary in meters
   currentCoords: { lat: number | null; lng: number | null } = { lat: null, lng: null };
   calculatedDistance: number | null = null;
   isCheckingLocation = false;
@@ -458,7 +458,7 @@ export class EmployeeDashboard implements OnInit {
         this.isCheckingLocation = false;
         console.warn('GPS query blocked or timed out, triggering fallback.');
         if (confirm('📡 GPS coordinates check blocked or timed out.\n\nWould you like to simulate check-in inside the Office Geofence? (Cancel to simulate out-of-bounds)')) {
-          this.verifyLocation(17.440861, 78.395125); // Office
+          this.verifyLocation(17.443500, 78.385000); // Office
         } else {
           this.verifyLocation(17.4520, 78.4060); // Remote
         }

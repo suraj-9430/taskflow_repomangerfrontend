@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { SocketService } from '../services/socket.service';
 
 interface NotificationItem {
   id: string;
@@ -23,10 +24,31 @@ export class Notifications implements OnInit {
   notifications: NotificationItem[] = [];
   activeFilter: 'all' | 'unread' | 'task' | 'project' | 'alert' | 'system' = 'all';
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private socketService: SocketService
+  ) {}
 
   ngOnInit(): void {
     this.fetchNotifications();
+    
+    // Initialize socket connection
+    this.socketService.connect();
+    
+    // Listen for real-time notifications
+    this.socketService.newNotification$.subscribe((n: any) => {
+      const newNotif: NotificationItem = {
+        id: n._id || n.id,
+        title: n.title,
+        message: n.message,
+        time: this.formatTime(n.createdAt || new Date()),
+        type: n.type,
+        isRead: n.isRead || false
+      };
+      
+      // Add to the top of the list
+      this.notifications.unshift(newNotif);
+    });
   }
 
   fetchNotifications(): void {
