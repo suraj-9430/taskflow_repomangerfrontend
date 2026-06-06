@@ -1,0 +1,78 @@
+<div class="chat-channels-container">
+  <!-- Left Sidebar (Projects & Channels list) -->
+  <div class="channels-sidebar">
+    <div class="sidebar-title">
+      <h3><i class="fa-solid fa-comments text-accent"></i> Project Channels</h3>
+    </div>
+    <div class="channels-list">
+      @for (project of projects; track project._id) {
+        <div class="channel-item" [class.active]="activeProject?._id === project._id" (click)="selectProject(project)">
+          <i class="fa-solid fa-hashtag"></i>
+          <span>{{ project.projectName }}</span>
+        </div>
+      } @empty {
+        <div class="empty-channels">No active projects found.</div>
+      }
+    </div>
+  </div>
+
+  <!-- Main Chat Area -->
+  <div class="chat-main">
+    @if (activeProject) {
+      <div class="chat-header">
+        <div class="header-info">
+          <h3># {{ activeProject.projectName }}</h3>
+          <p>{{ activeProject.description || 'Channel for project collaboration.' }}</p>
+        </div>
+      </div>
+
+      <!-- Messages History -->
+      <div class="chat-history" id="chat-history-container">
+        @for (msg of messages; track msg._id) {
+          <div class="message-row" [class.outgoing]="msg.sender?._id === getLoggedInUser().id">
+            <div class="sender-avatar">
+              {{ msg.sender?.firstName ? msg.sender.firstName.charAt(0).toUpperCase() : 'U' }}
+            </div>
+            <div class="message-bubble-wrapper">
+              <div class="sender-meta">
+                <span class="sender-name">{{ msg.sender?.firstName }} {{ msg.sender?.lastName }}</span>
+                <span class="timestamp">{{ msg.createdAt | date:'shortTime' }}</span>
+              </div>
+              <div class="message-bubble">
+                <p>{{ msg.content }}</p>
+              </div>
+            </div>
+          </div>
+        } @empty {
+          <div class="empty-chat">
+            <i class="fa-solid fa-comments"></i>
+            <p>Welcome to the #{{ activeProject.projectName }} channel! Start the discussion.</p>
+          </div>
+        }
+      </div>
+
+      <!-- Quick Replies Row -->
+      <div class="quick-replies-row">
+        @for (reply of quickReplies; track reply) {
+          <button class="reply-chip" (click)="sendQuickReply(reply)">{{ reply }}</button>
+        }
+      </div>
+
+      <!-- Message Input -->
+      <div class="chat-input-area">
+        <div class="input-row">
+          <input type="text" [(ngModel)]="messageText" placeholder="Message #{{ activeProject.projectName }} (type @Name to mention...)" (keyup.enter)="sendMessage()">
+          <button class="send-btn" (click)="sendMessage()" [disabled]="!messageText.trim() || isSending">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="no-channel-selected">
+        <i class="fa-solid fa-comments"></i>
+        <h3>No Channel Selected</h3>
+        <p>Please select a project channel from the sidebar to start collaborating.</p>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,196 @@
+<div class="calendar-page">
+  <div class="page-header card">
+    <div>
+      <span class="eyebrow">Feature 3</span>
+      <h1>Calendar & Scheduling</h1>
+      <p>Track deadlines, leave, project milestones, and team-created schedule events in one operational calendar.</p>
+    </div>
+    @if (canManageSchedules) {
+      <button class="btn btn-primary" (click)="openCreateModal(selectedDate)">
+        <i class="fa-solid fa-plus"></i>
+        Add Schedule Event
+      </button>
+    }
+  </div>
+
+  <div class="calendar-layout">
+    <section class="calendar-shell card">
+      <div class="calendar-toolbar">
+        <button class="icon-btn" (click)="previousMonth()">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <h2>{{ monthLabel }}</h2>
+        <button class="icon-btn" (click)="nextMonth()">
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+
+      <div class="weekdays">
+        @for (day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; track day) {
+          <span>{{ day }}</span>
+        }
+      </div>
+
+      @if (isLoading) {
+        <div class="loading-state">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>Loading calendar data...</span>
+        </div>
+      } @else {
+        <div class="calendar-grid">
+          @for (day of calendarDays; track day.iso) {
+            <button
+              class="day-cell"
+              [class.outside]="!day.inCurrentMonth"
+              [class.today]="day.isToday"
+              [class.selected]="day.isSelected"
+              (click)="selectDate(day.date)"
+            >
+              <span class="day-number">{{ day.date.getDate() }}</span>
+              <div class="day-events">
+                @for (event of day.events.slice(0, 3); track event.id) {
+                  <span class="event-chip {{ getEventClass(event) }}">{{ event.title }}</span>
+                }
+                @if (day.events.length > 3) {
+                  <span class="more-chip">+{{ day.events.length - 3 }} more</span>
+                }
+              </div>
+            </button>
+          }
+        </div>
+      }
+    </section>
+
+    <aside class="agenda-panel card">
+      <div class="agenda-header">
+        <div>
+          <span class="eyebrow">Selected Day</span>
+          <h2>{{ selectedDate | date: 'dd MMMM yyyy' }}</h2>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item"><i class="dot schedule"></i>Schedules</span>
+        <span class="legend-item"><i class="dot task"></i>Tasks</span>
+        <span class="legend-item"><i class="dot project"></i>Projects</span>
+        <span class="legend-item"><i class="dot leave"></i>Leave</span>
+      </div>
+
+      <div class="agenda-list">
+        @if (!selectedDayEvents.length) {
+          <div class="empty-state">
+            <i class="fa-solid fa-calendar-check"></i>
+            <p>No events are scheduled for this day.</p>
+          </div>
+        }
+
+        @for (event of selectedDayEvents; track event.id) {
+          <article class="agenda-card {{ getEventClass(event) }}">
+            <div class="agenda-copy">
+              <span class="badge">{{ event.badge }}</span>
+              <h3>{{ event.title }}</h3>
+              <p>{{ event.description || 'No extra details provided.' }}</p>
+              <small>{{ formatAgendaTime(event) }}</small>
+            </div>
+
+            @if (canManageSchedules && event.source === 'schedule') {
+              <div class="agenda-actions">
+                <button class="icon-btn" (click)="openEditModal(event)">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button class="icon-btn danger" (click)="deleteScheduleEvent(event)">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    </aside>
+  </div>
+
+  @if (showModal) {
+    <div class="modal-overlay" (click)="closeModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ scheduleForm.id ? 'Edit Schedule Event' : 'Create Schedule Event' }}</h3>
+          <button class="icon-btn" (click)="closeModal()">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <label>
+            <span>Title</span>
+            <input [(ngModel)]="scheduleForm.title" type="text" placeholder="Weekly planning call" />
+          </label>
+
+          <label>
+            <span>Description</span>
+            <textarea [(ngModel)]="scheduleForm.description" rows="3" placeholder="What should the team know?"></textarea>
+          </label>
+
+          <div class="modal-row">
+            <label>
+              <span>Type</span>
+              <select [(ngModel)]="scheduleForm.eventType">
+                <option value="meeting">Meeting</option>
+                <option value="shift">Shift</option>
+                <option value="reminder">Reminder</option>
+                <option value="review">Review</option>
+              </select>
+            </label>
+
+            <label>
+              <span>Audience</span>
+              <select [(ngModel)]="scheduleForm.audience">
+                <option value="all">Everyone</option>
+                <option value="admin">Admins</option>
+                <option value="manager">Managers</option>
+                <option value="employee">Employees</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="modal-row">
+            <label>
+              <span>Start</span>
+              <input [(ngModel)]="scheduleForm.startDate" type="date" />
+            </label>
+
+            <label>
+              <span>End</span>
+              <input [(ngModel)]="scheduleForm.endDate" type="date" />
+            </label>
+          </div>
+
+          <label class="checkbox-row">
+            <input [(ngModel)]="scheduleForm.allDay" type="checkbox" />
+            <span>All-day event</span>
+          </label>
+
+          <label>
+            <span>Participants</span>
+            <select [(ngModel)]="scheduleForm.participants" multiple>
+              @for (employee of employees; track employee._id) {
+                <option [ngValue]="employee._id">{{ employee.firstName }} {{ employee.lastName }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="closeModal()">Cancel</button>
+          <button class="btn btn-primary" (click)="saveScheduleEvent()" [disabled]="isSaving">
+            @if (isSaving) {
+              <i class="fa-solid fa-spinner fa-spin"></i>
+            } @else {
+              <i class="fa-solid fa-floppy-disk"></i>
+            }
+            Save Event
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

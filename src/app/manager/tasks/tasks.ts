@@ -26,6 +26,9 @@ export class Tasks implements OnInit {
   statusFilter: string = 'all';
   projectFilter: string = 'all';
   employeeFilter: string = 'all';
+  priorityFilter: string = 'all';
+  dueFromFilter: string = '';
+  dueToFilter: string = '';
 
   // Real Data
   projects: any[] = [];
@@ -35,6 +38,10 @@ export class Tasks implements OnInit {
   tasks: any[] = [];
 
   filteredTasks: any[] = [];
+  selectedTaskIds: string[] = [];
+  bulkStatus: string = '';
+  bulkPriority: string = '';
+  isApplyingBulkAction: boolean = false;
 
   // Modal
   showModal: boolean = false;
@@ -61,7 +68,15 @@ export class Tasks implements OnInit {
 
   loadData(): void {
     // Load real tasks
-    this.projectservice.getAllTasks().subscribe({
+    this.projectservice.getAllTasks({
+      search: this.searchTerm.trim(),
+      status: this.statusFilter,
+      projectId: this.projectFilter,
+      assignedTo: this.employeeFilter,
+      priority: this.priorityFilter,
+      dueFrom: this.dueFromFilter,
+      dueTo: this.dueToFilter,
+    }).subscribe({
       next: (res: any) => {
         this.tasks = res.data.map((t: any) => {
           // Normalize IDs to strings since they might come back as full populated objects
@@ -69,6 +84,7 @@ export class Tasks implements OnInit {
           const assignedTo = typeof t.assignedTo === 'object' && t.assignedTo ? t.assignedTo._id : t.assignedTo;
           return { ...t, projectId, assignedTo };
         });
+        this.selectedTaskIds = this.selectedTaskIds.filter(id => this.tasks.some(task => task._id === id));
         this.filterTasks();
       },
       error: err => console.error('Error fetching tasks', err)
@@ -113,13 +129,108 @@ export class Tasks implements OnInit {
       const matchesStatus = this.statusFilter === 'all' || task.status === this.statusFilter;
       const matchesProject = this.projectFilter === 'all' || String(task.projectId) === String(this.projectFilter);
       const matchesEmployee = this.employeeFilter === 'all' || String(task.assignedTo) === String(this.employeeFilter);
-      return matchesSearch && matchesStatus && matchesProject && matchesEmployee;
+      const matchesPriority = this.priorityFilter === 'all' || task.priority === this.priorityFilter;
+      const taskDueDate = task.dueDate ? new Date(task.dueDate) : null;
+      const matchesDueFrom = !this.dueFromFilter || (!!taskDueDate && taskDueDate >= new Date(this.dueFromFilter));
+      const matchesDueTo = !this.dueToFilter || (!!taskDueDate && taskDueDate <= new Date(this.dueToFilter));
+      return matchesSearch && matchesStatus && matchesProject && matchesEmployee && matchesPriority && matchesDueFrom && matchesDueTo;
     });
   }
 
   setStatusFilter(status: string): void {
     this.statusFilter = status;
-    this.filterTasks();
+    this.loadData();
+  }
+
+  applyFilters(): void {
+    this.loadData();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.projectFilter = 'all';
+    this.employeeFilter = 'all';
+    this.priorityFilter = 'all';
+    this.dueFromFilter = '';
+    this.dueToFilter = '';
+    this.loadData();
+  }
+
+  toggleTaskSelection(taskId: string): void {
+    if (this.selectedTaskIds.includes(taskId)) {
+      this.selectedTaskIds = this.selectedTaskIds.filter(id => id !== taskId);
+      return;
+    }
+    this.selectedTaskIds = [...this.selectedTaskIds, taskId];
+  }
+
+  isTaskSelected(taskId: string): boolean {
+    return this.selectedTaskIds.includes(taskId);
+  }
+
+  toggleSelectAllFiltered(): void {
+    const filteredIds = this.filteredTasks.map(task => task._id);
+    const allSelected = filteredIds.length > 0 && filteredIds.every(id => this.selectedTaskIds.includes(id));
+    this.selectedTaskIds = allSelected
+      ? this.selectedTaskIds.filter(id => !filteredIds.includes(id))
+      : Array.from(new Set([...this.selectedTaskIds, ...filteredIds]));
+  }
+
+  get areAllFilteredSelected(): boolean {
+    return this.filteredTasks.length > 0 && this.filteredTasks.every(task => this.selectedTaskIds.includes(task._id));
+  }
+
+  applyBulkTaskUpdate(): void {
+    if (!this.selectedTaskIds.length || this.isApplyingBulkAction) {
+      return;
+    }
+
+    const updates: any = {};
+    if (this.bulkStatus) updates.status = this.bulkStatus;
+    if (this.bulkPriority) updates.priority = this.bulkPriority;
+
+    if (!Object.keys(updates).length) {
+      alert('Choose a bulk status or priority first.');
+      return;
+    }
+
+    this.isApplyingBulkAction = true;
+    this.projectservice.bulkUpdateTasks(this.selectedTaskIds, updates).subscribe({
+      next: () => {
+        this.bulkStatus = '';
+        this.bulkPriority = '';
+        this.isApplyingBulkAction = false;
+        this.loadData();
+      },
+      error: err => {
+        console.error('Bulk update failed', err);
+        this.isApplyingBulkAction = false;
+      }
+    });
+  }
+
+  deleteSelectedTasks(): void {
+    if (!this.selectedTaskIds.length || this.isApplyingBulkAction) {
+      return;
+    }
+
+    if (!confirm(`Delete ${this.selectedTaskIds.length} selected tasks?`)) {
+      return;
+    }
+
+    this.isApplyingBulkAction = true;
+    this.projectservice.bulkDeleteTasks(this.selectedTaskIds).subscribe({
+      next: () => {
+        this.selectedTaskIds = [];
+        this.isApplyingBulkAction = false;
+        this.loadData();
+      },
+      error: err => {
+        console.error('Bulk delete failed', err);
+        this.isApplyingBulkAction = false;
+      }
+    });
   }
 
   // Get project name

@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
@@ -31,9 +31,17 @@ export class Projectservice {
   }
 
   // ── Projects (all protected) ──────────────
-  getAllProjects() {
+  getAllProjects(filters?: Record<string, string>) {
+    let params = new HttpParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value && value !== 'all') {
+        params = params.set(key, value);
+      }
+    });
+
     return this.http.get(`${this.baseUrl}/projects`, {
       headers: this.getAuthHeaders(),
+      params,
     });
   }
 
@@ -62,9 +70,17 @@ export class Projectservice {
   }
 
   // ── Tasks ─────────────────────────────────
-  getAllTasks() {
+  getAllTasks(filters?: Record<string, string>) {
+    let params = new HttpParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value && value !== 'all') {
+        params = params.set(key, value);
+      }
+    });
+
     return this.http.get(`${this.baseUrl}/tasks`, {
       headers: this.getAuthHeaders(),
+      params,
     });
   }
 
@@ -100,6 +116,68 @@ export class Projectservice {
 
   createTaskComment(taskId: string, payload: any) {
     return this.http.post(`${this.baseUrl}/tasks/${taskId}/comments`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  bulkUpdateTasks(taskIds: string[], updates: any) {
+    return this.http.put(
+      `${this.baseUrl}/tasks/bulk`,
+      { taskIds, updates },
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  bulkDeleteTasks(taskIds: string[]) {
+    return this.http.delete(`${this.baseUrl}/tasks/bulk`, {
+      headers: this.getAuthHeaders(),
+      body: { taskIds },
+    });
+  }
+
+  bulkUpdateProjects(projectIds: string[], updates: any) {
+    return this.http.put(
+      `${this.baseUrl}/projects/bulk`,
+      { projectIds, updates },
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  bulkDeleteProjects(projectIds: string[]) {
+    return this.http.delete(`${this.baseUrl}/projects/bulk`, {
+      headers: this.getAuthHeaders(),
+      body: { projectIds },
+    });
+  }
+
+  getCalendarEvents(filters?: Record<string, string>) {
+    let params = new HttpParams();
+    Object.entries(filters || {}).forEach(([key, value]) => {
+      if (value) {
+        params = params.set(key, value);
+      }
+    });
+
+    return this.http.get(`${this.baseUrl}/calendar/events`, {
+      headers: this.getAuthHeaders(),
+      params,
+    });
+  }
+
+  createCalendarEvent(payload: any) {
+    return this.http.post(`${this.baseUrl}/calendar/events`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  updateCalendarEvent(eventId: string, payload: any) {
+    return this.http.put(`${this.baseUrl}/calendar/events/${eventId}`, payload, {
+      headers: this.getAuthHeaders(),
+    });
+  }
+
+  deleteCalendarEvent(eventId: string) {
+    return this.http.delete(`${this.baseUrl}/calendar/events/${eventId}`, {
       headers: this.getAuthHeaders(),
     });
   }

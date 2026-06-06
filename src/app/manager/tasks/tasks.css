@@ -150,9 +150,11 @@
 .filter-dropdowns {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-.filter-dropdowns select {
+.filter-dropdowns select,
+.filter-dropdowns input {
   padding: 0.75rem 1rem;
   border: var(--border-subtle);
   border-radius: var(--r-md);
@@ -162,10 +164,66 @@
   cursor: pointer;
 }
 
-.filter-dropdowns select:focus {
+.filter-dropdowns select:focus,
+.filter-dropdowns input:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.secondary-btn,
+.danger-btn {
+  border-radius: var(--r-md);
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border: var(--border-subtle);
+}
+
+.danger-btn {
+  background: hsla(0,72%,58%,0.18);
+  color: var(--color-danger);
+  border: 1px solid hsla(0,72%,58%,0.3);
+}
+
+.bulk-toolbar {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--surface-1);
+  border: var(--border-subtle);
+  border-radius: var(--r-xl);
+  padding: 1rem 1.25rem;
+}
+
+.bulk-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bulk-actions select {
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  border: var(--border-subtle);
 }
 
 /* Kanban Board */
@@ -255,6 +313,22 @@
   padding: 1rem;
   border: var(--border-subtle);
   transition: all var(--t-base);
+  position: relative;
+}
+
+.task-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-dim);
+}
+
+.task-select {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.85rem;
+}
+
+.task-select input {
+  accent-color: var(--accent);
 }
 
 .task-card:hover {
@@ -564,12 +638,21 @@
     flex-direction: column;
   }
 
-  .filter-dropdowns select {
+  .filter-dropdowns select,
+  .filter-dropdowns input,
+  .secondary-btn,
+  .danger-btn {
     width: 100%;
   }
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .bulk-toolbar,
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

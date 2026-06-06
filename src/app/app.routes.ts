@@ -16,6 +16,10 @@ import { Settings } from './settings/settings';
 import { Notifications } from './notifications/notifications';
 import { AttendanceComponent } from './attendance/attendance';
 import { ErrorPage } from './error-page/error-page';
+import { AnalyticsDashboard } from './analytics-dashboard/analytics-dashboard';
+import { CalendarScheduler } from './calendar-scheduler/calendar-scheduler';
+import { ApprovalHub } from './approval-hub/approval-hub';
+import { ChatChannels } from './chat-channels/chat-channels';
 
 export const routes: Routes = [
   { path:"", loadComponent: () => import('./login-page/login-page').then(m => m.LoginPage) ,pathMatch:'full'},
@@ -30,7 +34,11 @@ export const routes: Routes = [
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
       { path: 'attendance', component: AttendanceComponent },
-      { path: 'leave', component: LeaveManagement }
+      { path: 'leave', component: LeaveManagement },
+      { path: 'analytics', component: AnalyticsDashboard },
+      { path: 'calendar', component: CalendarScheduler },
+      { path: 'approvals', component: ApprovalHub },
+      { path: 'channels', component: ChatChannels }
     ]
   },
 
@@ -46,7 +54,11 @@ export const routes: Routes = [
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
       { path: 'attendance', component: AttendanceComponent },
-      { path: 'leave', component: LeaveManagement }
+      { path: 'leave', component: LeaveManagement },
+      { path: 'analytics', component: AnalyticsDashboard },
+      { path: 'calendar', component: CalendarScheduler },
+      { path: 'approvals', component: ApprovalHub },
+      { path: 'channels', component: ChatChannels }
     ]
   },
 
@@ -61,10 +73,11 @@ export const routes: Routes = [
       { path: 'settings', component: Settings },
       { path: 'notifications', component: Notifications },
       { path: 'attendance', component: AttendanceComponent },
-      { path: 'leave', component: LeaveManagement }
+      { path: 'leave', component: LeaveManagement },
+      { path: 'approvals', component: ApprovalHub },
+      { path: 'channels', component: ChatChannels }
     ]
   },
 
   { path: '**', component: ErrorPage }
 ];
-

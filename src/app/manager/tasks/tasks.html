@@ -46,21 +46,58 @@
   <div class="filters-section">
     <div class="search-box">
       <i class="fas fa-search"></i>
-      <input type="text" placeholder="Search tasks..." [(ngModel)]="searchTerm" (input)="filterTasks()">
+      <input type="text" placeholder="Search tasks..." [(ngModel)]="searchTerm" (keyup.enter)="applyFilters()">
     </div>
     <div class="filter-dropdowns">
-      <select [(ngModel)]="projectFilter" (change)="filterTasks()">
+      <select [(ngModel)]="projectFilter" (change)="applyFilters()">
         <option value="all">All Projects</option>
         @for(project of projects; track project._id) {
         <option [value]="project._id">{{ project.projectName || project.name }}</option>
         }
       </select>
-      <select [(ngModel)]="employeeFilter" (change)="filterTasks()">
+      <select [(ngModel)]="employeeFilter" (change)="applyFilters()">
         <option value="all">All Employees</option>
         @for(emp of employees; track emp._id) {
         <option [value]="emp._id">{{ emp.firstName }} {{ emp.lastName }}</option>
         }
       </select>
+      <select [(ngModel)]="priorityFilter" (change)="applyFilters()">
+        <option value="all">All Priorities</option>
+        <option value="High">High Priority</option>
+        <option value="Medium">Medium Priority</option>
+        <option value="Low">Low Priority</option>
+      </select>
+      <input type="date" [(ngModel)]="dueFromFilter" (change)="applyFilters()" title="Due from">
+      <input type="date" [(ngModel)]="dueToFilter" (change)="applyFilters()" title="Due to">
+      <button class="secondary-btn" (click)="clearFilters()">Reset</button>
+    </div>
+  </div>
+
+  <div class="bulk-toolbar">
+    <label class="bulk-select-all">
+      <input type="checkbox" [checked]="areAllFilteredSelected" (change)="toggleSelectAllFiltered()">
+      <span>{{ selectedTaskIds.length }} selected</span>
+    </label>
+
+    <div class="bulk-actions">
+      <select [(ngModel)]="bulkStatus">
+        <option value="">Bulk Status</option>
+        <option value="To Do">To Do</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Completed">Completed</option>
+      </select>
+      <select [(ngModel)]="bulkPriority">
+        <option value="">Bulk Priority</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <button class="secondary-btn" (click)="applyBulkTaskUpdate()" [disabled]="!selectedTaskIds.length || isApplyingBulkAction">
+        Apply
+      </button>
+      <button class="danger-btn" (click)="deleteSelectedTasks()" [disabled]="!selectedTaskIds.length || isApplyingBulkAction">
+        Delete Selected
+      </button>
     </div>
   </div>
 
@@ -74,7 +111,10 @@
       </div>
       <div class="column-body" (dragover)="onDragOver($event, 'To Do')" (dragleave)="onDragLeave($event, 'To Do')" (drop)="onDrop($event, 'To Do')">
         @for(task of getTasksByStatus('To Do'); track task._id) {
-        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id">
+        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id" [class.selected]="isTaskSelected(task._id)">
+          <label class="task-select">
+            <input type="checkbox" [checked]="isTaskSelected(task._id)" (change)="toggleTaskSelection(task._id)">
+          </label>
           <div class="task-header">
             <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
             <span class="task-project">{{ getProjectName(task.projectId) }}</span>
@@ -140,7 +180,10 @@
       </div>
       <div class="column-body" (dragover)="onDragOver($event, 'In Progress')" (dragleave)="onDragLeave($event, 'In Progress')" (drop)="onDrop($event, 'In Progress')">
         @for(task of getTasksByStatus('In Progress'); track task._id) {
-        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id">
+        <div class="task-card" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id" [class.selected]="isTaskSelected(task._id)">
+          <label class="task-select">
+            <input type="checkbox" [checked]="isTaskSelected(task._id)" (change)="toggleTaskSelection(task._id)">
+          </label>
           <div class="task-header">
             <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
             <span class="task-project">{{ getProjectName(task.projectId) }}</span>
@@ -209,7 +252,10 @@
       </div>
       <div class="column-body" (dragover)="onDragOver($event, 'Completed')" (dragleave)="onDragLeave($event, 'Completed')" (drop)="onDrop($event, 'Completed')">
         @for(task of getTasksByStatus('Completed'); track task._id) {
-        <div class="task-card completed" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id">
+        <div class="task-card completed" draggable="true" (dragstart)="onDragStart(task)" (dragend)="onDragEnd()" [class.card-dragging]="draggedTask?._id === task._id" [class.selected]="isTaskSelected(task._id)">
+          <label class="task-select">
+            <input type="checkbox" [checked]="isTaskSelected(task._id)" (change)="toggleTaskSelection(task._id)">
+          </label>
           <div class="task-header">
             <span class="priority-dot" [ngClass]="getPriorityClass(task.priority)"></span>
             <span class="task-project">{{ getProjectName(task.projectId) }}</span>

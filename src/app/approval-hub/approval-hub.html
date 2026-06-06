@@ -1,0 +1,197 @@
+<div class="approval-hub-container">
+  <div class="page-header">
+    <div class="header-left">
+      <h1><i class="fa-solid fa-stamp text-accent"></i> Approval Hub</h1>
+      <p>Manage leave, remote check-ins, expenses, overtime, shift swaps, and documents.</p>
+    </div>
+    <button class="create-btn" (click)="openRequestModal()">
+      <i class="fa-solid fa-plus"></i> Submit Request
+    </button>
+  </div>
+
+  <!-- Filters Row -->
+  <div class="filters-row">
+    <button class="filter-chip" [class.active]="activeFilter === 'all'" (click)="activeFilter = 'all'">All</button>
+    <button class="filter-chip" [class.active]="activeFilter === 'Expense'" (click)="activeFilter = 'Expense'">Expenses</button>
+    <button class="filter-chip" [class.active]="activeFilter === 'Overtime'" (click)="activeFilter = 'Overtime'">Overtime</button>
+    <button class="filter-chip" [class.active]="activeFilter === 'Shift Swap'" (click)="activeFilter = 'Shift Swap'">Shift Swaps</button>
+    <button class="filter-chip" [class.active]="activeFilter === 'Document'" (click)="activeFilter = 'Document'">Documents</button>
+    <button class="filter-chip" [class.active]="activeFilter === 'Task Closure'" (click)="activeFilter = 'Task Closure'">Task Closures</button>
+  </div>
+
+  <!-- List Grid -->
+  <div class="approvals-grid">
+    @for (approval of getFilteredApprovals(); track approval._id) {
+      <div class="approval-card" (click)="openDetailsModal(approval)">
+        <div class="card-header">
+          <span class="type-badge" [attr.data-type]="approval.type">{{ approval.type }}</span>
+          <span class="status-badge" [attr.data-status]="approval.status">{{ approval.status }}</span>
+        </div>
+        <div class="card-body">
+          <h4>Requested by: {{ approval.requester?.firstName }} {{ approval.requester?.lastName }}</h4>
+          <p class="description">{{ approval.details?.description || 'No description provided' }}</p>
+          <div class="details-summary">
+            @if (approval.type === 'Expense') {
+              <span class="detail-item"><i class="fa-solid fa-indian-rupee-sign text-accent"></i> Amount: {{ approval.details?.amount }}</span>
+            } @else if (approval.type === 'Overtime') {
+              <span class="detail-item"><i class="fa-solid fa-clock text-accent"></i> Hours: {{ approval.details?.hoursRequested }}</span>
+            } @else if (approval.type === 'Shift Swap') {
+              <span class="detail-item"><i class="fa-solid fa-shuffle text-accent"></i> Swap Partner: {{ getSwapUserName(approval.details?.shiftSwapWith) }}</span>
+            }
+          </div>
+        </div>
+        <div class="card-footer">
+          <span class="date"><i class="fa-regular fa-calendar"></i> {{ approval.appliedAt | date:'mediumDate' }}</span>
+          <span class="action-prompt">View Details <i class="fa-solid fa-chevron-right"></i></span>
+        </div>
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <i class="fa-solid fa-stamp"></i>
+        <p>No approval requests found.</p>
+      </div>
+    }
+  </div>
+
+  <!-- Submit Request Modal -->
+  @if (showRequestModal) {
+    <div class="modal-overlay" (click)="closeRequestModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Submit New Request</h3>
+          <button class="close-btn" (click)="closeRequestModal()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Request Type:</label>
+            <select [(ngModel)]="requestType" (change)="resetRequestForm()">
+              <option value="Expense">Expense Claim</option>
+              <option value="Overtime">Overtime Claim</option>
+              <option value="Shift Swap">Shift Swap Request</option>
+              <option value="Document">Document Approval</option>
+              <option value="Task Closure">Task Closure Approval</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Description / Reason:</label>
+            <textarea [(ngModel)]="requestDescription" placeholder="Provide details of your request..."></textarea>
+          </div>
+
+          @if (requestType === 'Expense') {
+            <div class="form-group">
+              <label>Amount (INR):</label>
+              <input type="number" [(ngModel)]="expenseAmount" placeholder="Enter amount">
+            </div>
+            <div class="form-group">
+              <label>Receipt / Document URL:</label>
+              <input type="text" [(ngModel)]="documentUrl" placeholder="Link to receipt or file">
+            </div>
+          } @else if (requestType === 'Overtime') {
+            <div class="form-group">
+              <label>Hours Worked:</label>
+              <input type="number" [(ngModel)]="overtimeHours" placeholder="Enter hours">
+            </div>
+          } @else if (requestType === 'Shift Swap') {
+            <div class="form-group">
+              <label>Swap Shift With:</label>
+              <select [(ngModel)]="shiftSwapUserId">
+                <option value="">-- Select Team Member --</option>
+                @for (u of availableUsers; track u._id) {
+                  <option [value]="u._id">{{ u.firstName }} {{ u.lastName }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Target Date:</label>
+              <input type="date" [(ngModel)]="targetDate">
+            </div>
+          } @else if (requestType === 'Document' || requestType === 'Task Closure') {
+            <div class="form-group">
+              <label>Reference File / Document Link:</label>
+              <input type="text" [(ngModel)]="documentUrl" placeholder="Enter document URL link">
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" (click)="closeRequestModal()">Cancel</button>
+          <button class="save-btn" (click)="submitRequest()" [disabled]="isSubmitting">Submit</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Details / Process Modal -->
+  @if (showDetailsModal && selectedApproval) {
+    <div class="modal-overlay" (click)="closeDetailsModal()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Request Details</h3>
+          <button class="close-btn" (click)="closeDetailsModal()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="details-grid">
+            <div class="detail-row">
+              <span class="lbl">Requester:</span>
+              <span class="val">{{ selectedApproval.requester?.firstName }} {{ selectedApproval.requester?.lastName }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Type:</span>
+              <span class="val">{{ selectedApproval.type }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Status:</span>
+              <span class="val status-text" [attr.data-status]="selectedApproval.status">{{ selectedApproval.status }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Applied Date:</span>
+              <span class="val">{{ selectedApproval.appliedAt | date:'medium' }}</span>
+            </div>
+            <div class="detail-row full-width">
+              <span class="lbl">Description:</span>
+              <span class="val">{{ selectedApproval.details?.description }}</span>
+            </div>
+
+            @if (selectedApproval.type === 'Expense') {
+              <div class="detail-row">
+                <span class="lbl">Amount:</span>
+                <span class="val">INR {{ selectedApproval.details?.amount }}</span>
+              </div>
+            } @else if (selectedApproval.type === 'Overtime') {
+              <div class="detail-row">
+                <span class="lbl">Hours:</span>
+                <span class="val">{{ selectedApproval.details?.hoursRequested }}</span>
+              </div>
+            }
+
+            @if (selectedApproval.details?.documentUrl) {
+              <div class="detail-row full-width">
+                <span class="lbl">Reference Link:</span>
+                <span class="val"><a [href]="selectedApproval.details?.documentUrl" target="_blank" class="text-accent">View File</a></span>
+              </div>
+            }
+          </div>
+
+          @if (isAdminOrManager() && selectedApproval.status === 'Pending') {
+            <div class="process-section">
+              <label>Remarks / Notes:</label>
+              <textarea [(ngModel)]="remarksText" placeholder="Add remarks..."></textarea>
+            </div>
+          } @else if (selectedApproval.remarks) {
+            <div class="process-section">
+              <label>Remarks:</label>
+              <p class="remarks-paragraph">{{ selectedApproval.remarks }}</p>
+            </div>
+          }
+        </div>
+        <div class="modal-footer">
+          <button class="cancel-btn" (click)="closeDetailsModal()">Close</button>
+          @if (isAdminOrManager() && selectedApproval.status === 'Pending') {
+            <button class="reject-btn" (click)="processApproval('Rejected')" [disabled]="isProcessing">Reject</button>
+            <button class="approve-btn" (click)="processApproval('Approved')" [disabled]="isProcessing">Approve</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

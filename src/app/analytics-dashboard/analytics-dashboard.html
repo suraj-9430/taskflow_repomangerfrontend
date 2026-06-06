@@ -1,0 +1,166 @@
+<div class="analytics-page">
+  <div class="page-hero card">
+    <div>
+      <span class="eyebrow">New Feature</span>
+      <h1>{{ dashboardTitle }}</h1>
+      <p>{{ dashboardSubtitle }}</p>
+    </div>
+
+    <div class="hero-actions">
+      <a class="btn btn-primary" [routerLink]="primaryActionLink">
+        <i class="fa-solid {{ primaryActionIcon }}"></i>
+        {{ primaryActionLabel }}
+      </a>
+      <a class="btn btn-ghost" [routerLink]="secondaryActionLink">
+        <i class="fa-solid {{ secondaryActionIcon }}"></i>
+        {{ secondaryActionLabel }}
+      </a>
+    </div>
+  </div>
+
+  @if (loadNotice) {
+    <div class="notice-banner">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>{{ loadNotice }}</span>
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-panel card">
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      <span>Building the latest analytics snapshot...</span>
+    </div>
+  } @else {
+    <div class="metric-grid">
+      @for (card of metricCards; track card.label) {
+        <section class="metric-card card" [class]="getToneClass(card.tone)">
+          <div class="metric-icon">
+            <i class="fa-solid {{ card.icon }}"></i>
+          </div>
+          <div>
+            <span class="metric-label">{{ card.label }}</span>
+            <h2>{{ card.value }}</h2>
+            <p>{{ card.note }}</p>
+          </div>
+        </section>
+      }
+    </div>
+
+    <div class="analytics-grid">
+      <section class="panel card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-users-viewfinder"></i>Team Workload</h2>
+          <span class="helper-text">Top assignees by open load</span>
+        </div>
+
+        @if (workloadRows.length) {
+          <div class="insight-list">
+            @for (row of workloadRows; track row.label) {
+              <div class="insight-row">
+                <div class="insight-copy">
+                  <strong>{{ row.label }}</strong>
+                  <span>{{ row.helper }}</span>
+                </div>
+                <div class="insight-meter">
+                  <div class="meter-track">
+                    <div class="meter-fill" [style.width.%]="getBarWidth(row.value, workloadRows)"></div>
+                  </div>
+                  <span class="pill" [class]="getToneClass(row.tone)">{{ row.value }} tasks</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-state">No employee workload data is available yet.</p>
+        }
+      </section>
+
+      <section class="panel card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-bullseye"></i>Attention Queue</h2>
+          <span class="helper-text">What managers should review next</span>
+        </div>
+
+        <div class="alert-stack">
+          @for (item of attentionItems; track item.title) {
+            <article class="alert-card" [class]="getToneClass(item.severity)">
+              <h3>{{ item.title }}</h3>
+              <p>{{ item.helper }}</p>
+            </article>
+          }
+        </div>
+      </section>
+
+      <section class="panel card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-chart-simple"></i>Task Status Mix</h2>
+          <span class="helper-text">Delivery pipeline balance</span>
+        </div>
+
+        <div class="status-list">
+          @for (status of statusBreakdown; track status.label) {
+            <div class="status-row">
+              <div>
+                <strong>{{ status.label }}</strong>
+                <span>{{ status.count }} tasks</span>
+              </div>
+              <div class="status-figure">
+                <div class="ring-shell">
+                  <div class="ring-fill" [style.--ring-fill]="status.percent + '%'"></div>
+                  <span>{{ status.percent }}%</span>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="panel card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-folder-open"></i>Project Health</h2>
+          <span class="helper-text">Lowest progress projects first</span>
+        </div>
+
+        @if (projectHealthRows.length) {
+          <div class="project-list">
+            @for (project of projectHealthRows; track project.name) {
+              <div class="project-row">
+                <div class="project-meta">
+                  <strong>{{ project.name }}</strong>
+                  <span>{{ project.status }} · {{ project.deadlineLabel }}</span>
+                </div>
+                <div class="project-progress">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="project.progress"></div>
+                  </div>
+                  <span>{{ project.progress }}%</span>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-state">Project health data will appear here once projects are loaded.</p>
+        }
+      </section>
+
+      <section class="panel card">
+        <div class="section-header">
+          <h2><i class="fa-solid fa-calendar-check"></i>Leave Distribution</h2>
+          <span class="helper-text">Requested leave mix</span>
+        </div>
+
+        <div class="leave-list">
+          @for (leave of leaveBreakdown; track leave.label) {
+            <div class="leave-row">
+              <div>
+                <strong>{{ leave.label }}</strong>
+                <span>{{ leave.count }} requests</span>
+              </div>
+              <span class="leave-percent">{{ leave.percent }}%</span>
+            </div>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</div>

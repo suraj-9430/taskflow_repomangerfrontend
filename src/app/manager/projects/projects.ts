@@ -16,9 +16,17 @@ export class Projects implements OnInit {
   // ── State ──────────────────────────────────
   searchTerm: string = '';
   statusFilter: string = 'all';
+  priorityFilter: string = 'all';
+  assigneeFilter: string = 'all';
+  deadlineFromFilter: string = '';
+  deadlineToFilter: string = '';
   projects: any[] = [];
   employees: any[] = [];
   filteredProjects: any[] = [];
+  selectedProjectIds: string[] = [];
+  bulkStatus = '';
+  bulkPriority = '';
+  isApplyingBulkAction = false;
 
   // ── Modal ──────────────────────────────────
   showModal = false;
@@ -35,9 +43,19 @@ export class Projects implements OnInit {
 
   // ── Data Loading ───────────────────────────
   loadProjects(): void {
-    this.projectservice.getAllProjects().subscribe({
+    this.projectservice.getAllProjects({
+      search: this.searchTerm.trim(),
+      status: this.statusFilter,
+      priority: this.priorityFilter,
+      assigneeId: this.assigneeFilter,
+      deadlineFrom: this.deadlineFromFilter,
+      deadlineTo: this.deadlineToFilter,
+    }).subscribe({
       next: (res: any) => {
         this.projects = res.data.map((p: any) => this.mapProject(p));
+        this.selectedProjectIds = this.selectedProjectIds.filter(id =>
+          this.projects.some(project => project._id === id)
+        );
         this.filterProjects();
       },
       error: (err) => console.error('Failed to load projects', err),
@@ -111,13 +129,111 @@ export class Projects implements OnInit {
         (p.description || '').toLowerCase().includes(this.searchTerm.toLowerCase());
       const matchStatus =
         this.statusFilter === 'all' || p.status === this.statusFilter;
-      return matchSearch && matchStatus;
+      const matchPriority =
+        this.priorityFilter === 'all' || p.priority === this.priorityFilter;
+      const matchAssignee =
+        this.assigneeFilter === 'all' || (p.employeeIds || []).some(
+          (id: string) => String(id) === String(this.assigneeFilter)
+        );
+      const projectDeadline = p.deadline ? new Date(p.deadline) : null;
+      const matchDeadlineFrom = !this.deadlineFromFilter || (!!projectDeadline && projectDeadline >= new Date(this.deadlineFromFilter));
+      const matchDeadlineTo = !this.deadlineToFilter || (!!projectDeadline && projectDeadline <= new Date(this.deadlineToFilter));
+      return matchSearch && matchStatus && matchPriority && matchAssignee && matchDeadlineFrom && matchDeadlineTo;
     });
   }
 
   setStatusFilter(status: string): void {
     this.statusFilter = status;
-    this.filterProjects();
+    this.loadProjects();
+  }
+
+  applyFilters(): void {
+    this.loadProjects();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = 'all';
+    this.priorityFilter = 'all';
+    this.assigneeFilter = 'all';
+    this.deadlineFromFilter = '';
+    this.deadlineToFilter = '';
+    this.loadProjects();
+  }
+
+  toggleProjectSelection(projectId: string): void {
+    if (this.selectedProjectIds.includes(projectId)) {
+      this.selectedProjectIds = this.selectedProjectIds.filter(id => id !== projectId);
+      return;
+    }
+    this.selectedProjectIds = [...this.selectedProjectIds, projectId];
+  }
+
+  isProjectSelected(projectId: string): boolean {
+    return this.selectedProjectIds.includes(projectId);
+  }
+
+  toggleSelectAllFiltered(): void {
+    const filteredIds = this.filteredProjects.map(project => project._id);
+    const allSelected = filteredIds.length > 0 && filteredIds.every(id => this.selectedProjectIds.includes(id));
+    this.selectedProjectIds = allSelected
+      ? this.selectedProjectIds.filter(id => !filteredIds.includes(id))
+      : Array.from(new Set([...this.selectedProjectIds, ...filteredIds]));
+  }
+
+  get areAllFilteredSelected(): boolean {
+    return this.filteredProjects.length > 0 && this.filteredProjects.every(project => this.selectedProjectIds.includes(project._id));
+  }
+
+  applyBulkProjectUpdate(): void {
+    if (!this.selectedProjectIds.length || this.isApplyingBulkAction) {
+      return;
+    }
+
+    const updates: any = {};
+    if (this.bulkStatus) updates.status = this.bulkStatus;
+    if (this.bulkPriority) updates.priority = this.bulkPriority;
+
+    if (!Object.keys(updates).length) {
+      alert('Choose a bulk project status or priority first.');
+      return;
+    }
+
+    this.isApplyingBulkAction = true;
+    this.projectservice.bulkUpdateProjects(this.selectedProjectIds, updates).subscribe({
+      next: () => {
+        this.bulkStatus = '';
+        this.bulkPriority = '';
+        this.isApplyingBulkAction = false;
+        this.loadProjects();
+      },
+      error: (err) => {
+        console.error('Bulk project update failed', err);
+        this.isApplyingBulkAction = false;
+      },
+    });
+  }
+
+  deleteSelectedProjects(): void {
+    if (!this.selectedProjectIds.length || this.isApplyingBulkAction) {
+      return;
+    }
+    if (!confirm(`Delete ${this.selectedProjectIds.length} selected projects?`)) {
+      return;
+    }
+
+    this.isApplyingBulkAction = true;
+    this.projectservice.bulkDeleteProjects(this.selectedProjectIds).subscribe({
+      next: () => {
+        this.selectedProjectIds = [];
+        this.isApplyingBulkAction = false;
+        this.loadProjects();
+      },
+      error: (err) => {
+        console.error('Bulk project delete failed', err);
+        this.isApplyingBulkAction = false;
+      },
+    });
   }
 
   // ── Employee helpers ───────────────────────
