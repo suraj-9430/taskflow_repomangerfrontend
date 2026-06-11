@@ -36,14 +36,28 @@ graph TD
 
 ### 💬 Live Websocket & Room Orchestration (`socket.ts`)
 *   **Connection Lifecycle:** Socket sessions authenticate on startup using JWT Handshake verifications. Once connected, sockets are mapped by user ID.
-*   **Interactive Discussion Rooms:**
+*   **Interactive Discussion & Project Rooms:**
     ```typescript
-    // When opening a chat panel
+    // Task-level rooms
     socket.on('join_task', (taskId) => socket.join(`task_${taskId}`));
-    // When closing the chat panel
     socket.on('leave_task', (taskId) => socket.leave(`task_${taskId}`));
+
+    // Project-level channels
+    socket.on('join_project', (projectId) => socket.join(`project_${projectId}`));
+    socket.on('leave_project', (projectId) => socket.leave(`project_${projectId}`));
     ```
-*   **Automatic Propagation:** When a new comment is posted to a task, the REST controller uses `getIO().to('task_taskId').emit('new_comment', populatedComment)` to push notifications to all users connected to that room.
+*   **Automatic Propagation:** When a new comment or chat message is posted:
+    *   Task comment: REST controller broadcasts to `task_${taskId}` via `new_comment` event.
+    *   Channel message: REST controller broadcasts to `project_${projectId}` or `task_${taskId}` room via `new_channel_message` event.
+    *   Live @Mentions: Emits a real-time `new_mention` event directly to targeted socket connections for affected users.
+
+### 🤖 Google Gemini AI Co-Pilot Service (`ai.controller.ts`)
+*   **Integration Model:** Interfaces with `gemini-2.5-flash` via the Google Generative Language REST endpoints.
+*   **Stateful Instructions:** Implements a comprehensive `SYSTEM_PROMPT` defining roles, platform guidelines, and capabilities.
+*   **API Endpoints:**
+    *   `POST /api/ai/chat`: Handles conversational helper chat, processing a structured history of past inputs (`history` mapped into user/model structures) alongside the active prompt.
+    *   `POST /api/ai/breakdown`: Accepts task details and commands Gemini to output a structured JSON array checklist of actionable steps (includes safety fallbacks to parse raw text lines if JSON generation encounters format errors).
+*   **Environment Secret:** Requires `GEMINI_API_KEY` to authenticate outgoing beta-model API requests.
 
 ### ⏰ Location Attendance Engine
 *   **Formula Calculation:** Uses the Spherical Law of Cosines to calculate geodesic distance between coordinates on the Earth's surface:
@@ -77,3 +91,28 @@ To keep the application highly responsive, task assignments and status updates a
 
 ### Attendance Schema (`attendance.model.ts`)
 *   **Keys:** `user` (reference to User ID), `timestamp`, `type` (Office Present / Remote Present / Clocked Out), `distanceMeters`, `status` (Approved / Pending / Rejected).
+
+### Approval Schema (`approval.model.ts`)
+*   **Keys:**
+    *   `type`: String Enum (`Leave`, `Attendance`, `Expense`, `Task Closure`, `Overtime`, `Shift Swap`, `Document`)
+    *   `requester`: Reference to User model
+    *   `details`: Nested sub-document storing context-specific properties:
+        *   `amount` (number for expenses)
+        *   `description` (string details)
+        *   `documentUrl` (string for file attachments)
+        *   `targetDate` (Date marker)
+        *   `taskId` (Reference to Task model)
+        *   `shiftSwapWith` (Reference to User model)
+        *   `hoursRequested` (number for overtime)
+    *   `status`: String Enum (`Pending`, `Approved`, `Rejected`)
+    *   `approver`: Reference to User model (Admin/Manager processing request)
+    *   `remarks`: Action processing remarks text
+
+### ChatMessage Schema (`chatMessage.model.ts`)
+*   **Keys:**
+    *   `channelType`: String Enum (`project`, `task`)
+    *   `targetId`: Reference ID of the target resource (Project or Task)
+    *   `sender`: Reference to User model
+    *   `content`: Message text contents
+    *   `mentions`: Array of references to mentioned User models
+    *   `quickReply`: Boolean flag representing quick reply trigger status
