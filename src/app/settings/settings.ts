@@ -42,7 +42,8 @@ export class Settings implements OnInit {
     density: 'cozy',
     soundEffects: true,
     sidebarExpanded: true,
-    animationsEnabled: true
+    animationsEnabled: true,
+    darkMode: true
   };
 
   // Action states
@@ -84,6 +85,7 @@ export class Settings implements OnInit {
               this.preferences = { ...this.preferences, ...user.settings.preferences };
               // Apply theme instantly
               this.applyTheme(this.preferences.themeColor);
+              this.applyDarkMode(this.preferences.darkMode);
             }
           }
 
@@ -163,6 +165,7 @@ export class Settings implements OnInit {
           localStorage.setItem('user', JSON.stringify(localUser));
 
           this.applyTheme(this.preferences.themeColor);
+          this.applyDarkMode(this.preferences.darkMode);
           this.triggerToast('Settings updated successfully!');
 
           if (this.preferences.soundEffects) {
@@ -221,6 +224,15 @@ export class Settings implements OnInit {
     const classesToRemove = Array.from(body.classList).filter(c => c.startsWith('theme-'));
     classesToRemove.forEach(c => body.classList.remove(c));
     body.classList.add(`theme-${color}`);
+  }
+
+  applyDarkMode(darkMode: boolean): void {
+    const body = document.body;
+    if (darkMode) {
+      body.classList.remove('light-mode');
+    } else {
+      body.classList.add('light-mode');
+    }
   }
 
   triggerToast(message: string): void {
