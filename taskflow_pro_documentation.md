@@ -24,7 +24,7 @@
 
 ## Product Overview
 
-**TaskFlow Pro** is an enterprise-grade workforce management platform that combines **task tracking**, **project management**, **employee management**, **attendance tracking**, **leave management**, **real-time notifications**, and an **AI assistant** — all in a single full-stack application.
+**TaskFlow Pro** is an enterprise-grade workforce management platform that combines **task tracking**, **project management**, **employee management**, **attendance tracking**, **leave management**, **real-time notifications**, **team collaboration chat channels**, **unified approval workflows**, and an **AI assistant** — all in a single full-stack application.
 
 ### Core Capabilities
 
@@ -36,9 +36,11 @@
 | 👥 **Employee Management** | Full CRUD for employees with status management (active/inactive/hold) |
 | ⏰ **Attendance Tracking** | GPS-based clock-in/out with Office & Remote presence, admin approval for remote work |
 | 📅 **Leave Management** | Apply for leaves, track balances, audit logs, and approve/reject leave requests |
-| 🔔 **Notifications** | In-app notification system with read/unread tracking |
+| 💬 **Team Chat & Channels** | Project-level communication channels, live task-level discussions, user mentions, and quick reply chips |
+| stamp **Approval Workflows** | Unified approvals covering Leave, Remote Attendance, Expenses, Overtime, Shift Swaps, Documents, and Task Closures |
+| 🔔 **Notifications** | In-app notification system with read/unread tracking and real-time socket delivery |
 | 📧 **Email Alerts** | Background email notifications via RabbitMQ + Nodemailer (Gmail SMTP) |
-| 🤖 **AI Assistant** | Built-in AI co-pilot powered by **Google Gemini 2.5 Flash** for task breakdown, workload summaries, and productivity tips |
+| 🤖 **AI Assistant** | Built-in AI co-pilot powered by **Google Gemini 2.5 Flash** supporting auto-prioritization, workload balancing suggestions, leave anomalies, meeting summaries, and performance reports |
 | 📱 **Mobile App** | Android APK via Capacitor |
 | 🔑 **Password Reset** | OTP-based password recovery via email |
 
@@ -60,6 +62,8 @@ graph TB
         C & D & E --> J["Attendance Module"]
         C & D & E --> K["AI Assistant Service"]
         C & D & E --> Z["Leave Module"]
+        C & D & E --> AA["Approvals Hub Component"]
+        C & D & E --> BB["Chat Channels Component"]
     end
 
     subgraph "Backend - Express + TypeScript"
@@ -71,6 +75,8 @@ graph TB
         M --> R["Leave Controller"]
         M --> S["Notification Controller"]
         M --> Y["AI Controller (Gemini API)"]
+        M --> CC["Approval Controller"]
+        M --> DD["Chat Controller"]
         O --> T["RabbitMQ Publisher"]
     end
 
@@ -101,6 +107,7 @@ graph TB
 | ng-bootstrap | 20.x | Angular-native Bootstrap widgets |
 | RxJS | 7.8 | Reactive state management |
 | Capacitor | 8.x | Native Android wrapper |
+| Socket.io-client | 4.x | Real-time WebSocket communications |
 | Hash Routing | — | `withHashLocation()` for Capacitor compatibility |
 
 ### Backend
@@ -109,6 +116,7 @@ graph TB
 | Node.js + Express | 4.21 | REST API server |
 | TypeScript | 6.x | Type-safe backend |
 | Mongoose | 8.5 | MongoDB ODM |
+| Socket.io | 4.x | WebSocket real-time server |
 | bcryptjs | 3.x | Password hashing |
 | jsonwebtoken | 9.x | JWT authentication |
 | Nodemailer | 8.x | SMTP email delivery |
@@ -135,6 +143,8 @@ The app uses **three role-specific dashboard layouts**, each protected by the [a
 | `/dashboard/notifications` | `admin` | `Notifications` | Notification center |
 | `/dashboard/attendance` | `admin` | `AttendanceComponent` | Attendance overview |
 | `/dashboard/leave-management` | `admin` | `LeaveManagement` | Leave history & management |
+| `/dashboard/approvals` | `admin` | `ApprovalHub` | Unified Approvals Panel |
+| `/dashboard/channels` | `admin` | `ChatChannels` | Team Project Channels |
 | `/manager-dashboard` | `manager` | `ManagerDashboard` | Manager home |
 | `/manager-dashboard/projects` | `manager` | `Projects` | Project management |
 | `/manager-dashboard/tasks` | `manager` | `Tasks` | Task management |
@@ -142,12 +152,16 @@ The app uses **three role-specific dashboard layouts**, each protected by the [a
 | `/manager-dashboard/settings` | `manager` | `Settings` | Settings |
 | `/manager-dashboard/notifications` | `manager` | `Notifications` | Notifications |
 | `/manager-dashboard/attendance` | `manager` | `Attendance` | Attendance |
+| `/manager-dashboard/approvals` | `manager` | `ApprovalHub` | Unified Approvals Panel |
+| `/manager-dashboard/channels` | `manager` | `ChatChannels` | Team Project Channels |
 | `/employee-dashboard` | `employee` | `EmployeeDashboard` | Employee home |
 | `/employee-dashboard/my-tasks` | `employee` | `MyTasks` | Personal task list |
 | `/employee-dashboard/my-projects` | `employee` | `MyProjects` | Assigned projects |
 | `/employee-dashboard/settings` | `employee` | `Settings` | Settings |
 | `/employee-dashboard/notifications` | `employee` | `Notifications` | Notifications |
 | `/employee-dashboard/attendance` | `employee` | `Attendance` | Attendance |
+| `/employee-dashboard/approvals` | `employee` | `ApprovalHub` | Unified Approvals Panel |
+| `/employee-dashboard/channels` | `employee` | `ChatChannels` | Team Project Channels |
 
 ### Auth Guard Logic
 
@@ -175,6 +189,19 @@ export const environment = {
   apiUrl: 'http://localhost:5000/api'  // Points to the backend
 };
 ```
+
+### Mobile & Multi-Device Responsive Layouts
+
+TaskFlow Pro is optimized for multiple devices (Desktop, Tablet, Mobile) and native wrapper environments (Capacitor Android):
+
+1. **Safe Area Inset Support**: Handles camera notches and home screen indicators on Android/iOS via custom styling variables:
+   - `--safe-top: env(safe-area-inset-top, 0px);`
+   - `--safe-bottom: env(safe-area-inset-bottom, 0px);`
+2. **Glassmorphic AI Co-Pilot Panel**: Slide-out panels use glassmorphic backdrops (`backdrop-filter: blur(20px)`) that dynamically adapt to the available screen width.
+3. **Adaptive Dashboard Views**: 
+   - Dashboard layouts utilize CSS grid auto-fit/minmax columns to wrap stats card rows dynamically.
+   - Header action items and profile labels are automatically collapsed or simplified on smaller screens.
+   - Task discussion chat window opens in a full-screen bottom-sheet modal on mobile layouts.
 
 ---
 
@@ -301,6 +328,33 @@ export const environment = {
 
 ---
 
+### Approval Model — [approval.model.ts](file:///c:/Users/rajsu/OneDrive/Desktop/Suraj%20Tradefinance/backend/src/models/approval.model.ts)
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `type` | Enum | ✅ | `Leave` · `Attendance` · `Expense` · `Task Closure` · `Overtime` · `Shift Swap` · `Document` |
+| `requester` | ObjectId → User | ✅ | User requesting the approval |
+| `details` | Object | No | Contains `amount`, `description`, `documentUrl`, `targetDate`, `taskId`, `shiftSwapWith`, `hoursRequested` |
+| `status` | Enum | No | `Pending` · `Approved` · `Rejected` (Default: `Pending`) |
+| `approver` | ObjectId → User | No | User processing the approval |
+| `remarks` | String | No | Notes added by the approver |
+| `appliedAt` | Date | No | Default: now |
+
+---
+
+### ChatMessage Model — [chatMessage.model.ts](file:///c:/Users/rajsu/OneDrive/Desktop/Suraj%20Tradefinance/backend/src/models/chatMessage.model.ts)
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `channelType` | Enum | ✅ | `project` · `task` |
+| `targetId` | ObjectId | ✅ | ID of the corresponding Project or Task |
+| `sender` | ObjectId → User | ✅ | Message sender |
+| `content` | String | ✅ | Message text |
+| `mentions` | ObjectId[] → User | No | Mentioned users |
+| `quickReply` | Boolean | No | Identifies pre-set quick response (Default: `false`) |
+
+---
+
 ## API Reference
 
 ### 🔐 Users — `/api/users`
@@ -379,13 +433,48 @@ export const environment = {
 
 ---
 
+### stamp Approvals — `/api/approvals` (🔒 All routes require JWT)
+
+| Method | Endpoint | Auth | Role Required | Description |
+|--------|----------|------|---------------|-------------|
+| `POST` | `/api/approvals` | ✅ | Any | Submit new approval request (Expense, Overtime, Shift Swap, Doc, Task Closure) |
+| `GET` | `/api/approvals` | ✅ | Any | Fetch approvals list (Admins/Managers: All, Employees: Self) |
+| `PUT` | `/api/approvals/:id` | ✅ | `admin`, `manager` | Process approval status (Approve or Reject with remarks) |
+
+---
+
+### 💬 Chats — `/api/chats` (🔒 All routes require JWT)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/chats/:channelType/:targetId` | ✅ | Fetch all messages in a channel room (project or task) |
+| `POST` | `/api/chats` | ✅ | Send a new chat message, handles Socket room emits & user mentions |
+
+---
+
 ## Authentication & Authorization
 
-### JWT Flow
+### JWT Flow (Refresh Token Pattern)
 
-1. Client logins: `POST /api/users/login` → returns JWT + sets cookie
-2. Protected routes verified: `protect` middleware checks header/cookie token
-3. Role restrictions: `authorize('admin')` restricts route to administrative user
+TaskFlow Pro implements a secure **Dual-Token Authentication System** to support secure API calls and silent session renewal:
+
+1. **Short-Lived Access Token**:
+   - **Lifetime**: 15 minutes.
+   - **Payload**: `{ user: { id, role } }`.
+   - Returned in JSON payload on successful login/refresh, and passed via the `Authorization: Bearer <token>` header.
+
+2. **Long-Lived Refresh Token**:
+   - **Lifetime**: 7 days.
+   - **Storage**: Set in an `HttpOnly`, secure, `SameSite=Lax` cookie (`refreshToken`).
+   - Also saved in the User model in the database (`refreshToken` field, not selected by default).
+
+3. **Token Rotation**:
+   - On request to `POST /api/users/refresh-token`, the server verifies the refresh token cookie, generates a *new* access token, signs a *new* refresh token (rotating the old one in database and cookie), and returns the new access token.
+
+4. **Angular HTTP Interceptor (`authInterceptor`)**:
+   - Automatically injects the `Authorization` header to outgoing HTTP requests if the access token exists locally.
+   - Intercepts incoming `401 Unauthorized` responses.
+   - Triggers a silent POST request to `/api/users/refresh-token` with credentials (`withCredentials: true`) to swap the cookie for a new access token, updates the token locally, and retries the original failed request seamlessly.
 
 ---
 
@@ -410,6 +499,20 @@ GEMINI_API_KEY=your_google_gemini_api_key_here
 
 ---
 
+## Scripts & Commands
+
+### Frontend (`TaskFlow-pro`)
+* **Start local dev server**: `npm start` (Runs environment configuration setup and starts `ng serve` on `http://localhost:4200`)
+* **Production Build**: `npm run build` (Prepares compiled, optimized production web assets under `dist/TaskFlow-pro/`)
+* **Capacitor Sync**: `npx cap sync` (Synchronizes compiled web assets and plugins to the native `android` folder)
+* **Open in Android Studio**: `npx cap open android` (Opens the android project folder directly in Android Studio for native execution)
+
+### Backend (`backend`)
+* **Start local dev server**: `npm run dev` (Runs backend Express and WebSockets server on port `5000` with hot-reloading)
+* **Start Email Worker**: `npm run worker` (Runs RabbitMQ consumer processing email delivery alerts asynchronously)
+
+---
+
 ## Project File Map
 
 ### Frontend — `TaskFlow-pro/src/app/`
@@ -419,6 +522,8 @@ src/app/
 ├── guards/auth.guard.ts
 ├── services/ai.service.ts
 ├── leave-management/                # Leave management interface
+├── approval-hub/                    # Unified approvals center
+├── chat-channels/                   # Team project chat channels
 ├── error-page/                      # Catch-all routing errors
 └── ...
 ```
@@ -435,13 +540,16 @@ src/
 │   ├── project.model.ts
 │   ├── leave.model.ts
 │   ├── attendance.model.ts
-│   └── notification.model.ts
+│   ├── notification.model.ts
+│   ├── approval.model.ts
+│   └── chatMessage.model.ts
 ├── controllers/
 │   ├── user.controller.ts
 │   ├── task.controller.ts
 │   ├── project.controller.ts
 │   ├── leave.controller.ts
 │   ├── attendance.controller.ts
+│   ├── approval.controller.ts
 │   └── ai.controller.ts
 ├── routes/
 │   ├── user.routes.ts
@@ -449,9 +557,12 @@ src/
 │   ├── project.routes.ts
 │   ├── leave.routes.ts
 │   ├── attendance.routes.ts
+│   ├── approval.routes.ts
+│   ├── chat.routes.ts
 │   └── ai.routes.ts
 ├── seed.ts                          # Seed 40 test users
 └── seedProjects.ts                  # Seed sample projects
+```
 ```
 
 ---
