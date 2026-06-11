@@ -81,6 +81,20 @@ export class EmployeeDashboard implements OnInit {
     this.loadData();
     this.loadAttendanceState();
     this.loadPersonalData();
+    this.loadOfficeCoords();
+  }
+
+  loadOfficeCoords(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+      next: (res) => {
+        if (res.lat !== undefined && res.lng !== undefined) {
+          this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
+        }
+      },
+      error: (err) => console.error('Error loading office coords', err)
+    });
   }
 
   loadEmployeeProfile(): void {
@@ -442,6 +456,23 @@ export class EmployeeDashboard implements OnInit {
   clockIn(): void {
     this.isCheckingLocation = true;
     
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+      next: (res) => {
+        if (res.lat !== undefined && res.lng !== undefined) {
+          this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
+        }
+        this.proceedClockIn();
+      },
+      error: (err) => {
+        console.error('Error loading fresh office coords, using cached', err);
+        this.proceedClockIn();
+      }
+    });
+  }
+
+  proceedClockIn(): void {
     if (!navigator.geolocation) {
       this.isCheckingLocation = false;
       alert('Error: Geolocation is not supported by your browser.');
@@ -458,9 +489,9 @@ export class EmployeeDashboard implements OnInit {
         this.isCheckingLocation = false;
         console.warn('GPS query blocked or timed out, triggering fallback.');
         if (confirm('📡 GPS coordinates check blocked or timed out.\n\nWould you like to simulate check-in inside the Office Geofence? (Cancel to simulate out-of-bounds)')) {
-          this.verifyLocation(17.443500, 78.385000); // Office
+          this.verifyLocation(this.officeCoords.lat, this.officeCoords.lng); // Office
         } else {
-          this.verifyLocation(17.4520, 78.4060); // Remote
+          this.verifyLocation(this.officeCoords.lat + 0.01, this.officeCoords.lng + 0.01); // Remote
         }
       },
       { enableHighAccuracy: true, timeout: 6000 }
@@ -481,7 +512,7 @@ export class EmployeeDashboard implements OnInit {
       alert(`🟢 Punch-In Successful!\nStatus: Office Present\nDistance: ${this.geofenceDistance}m to office hub.`);
     } else {
       this.playWarningChime();
-      if (confirm(`⚠️ Out of Geofence bounds!\n\nYou are ${this.geofenceDistance} meters away from the office hub.\n\nDo you want to send a Remote Present request to the Admin for approval?`)) {
+      if (confirm(`⚠️ Out of Geofence bounds!\n\nYou are ${this.geofenceDistance} meters away from the office hub.\nDetected Coordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}\n\nDo you want to send a Remote Present request to the Admin for approval?`)) {
         this.clockStatus = 'Remote Present';
         localStorage.setItem('clockStatus_' + userId, this.clockStatus);
         this.playSuccessChime();
@@ -497,6 +528,23 @@ export class EmployeeDashboard implements OnInit {
   clockOut(): void {
     this.isCheckingLocation = true;
     
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+      next: (res) => {
+        if (res.lat !== undefined && res.lng !== undefined) {
+          this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
+        }
+        this.proceedClockOut();
+      },
+      error: (err) => {
+        console.error('Error loading fresh office coords, using cached', err);
+        this.proceedClockOut();
+      }
+    });
+  }
+
+  proceedClockOut(): void {
     if (!navigator.geolocation) {
       this.isCheckingLocation = false;
       this.performClockOut('N/A', 0);
@@ -516,7 +564,7 @@ export class EmployeeDashboard implements OnInit {
         if (confirm('📡 GPS coordinates check blocked or timed out.\n\nWould you like to simulate check-out from the Office? (Cancel to simulate remote check-out)')) {
           this.performClockOut(`${this.officeCoords.lat.toFixed(4)}, ${this.officeCoords.lng.toFixed(4)}`, 0);
         } else {
-          this.performClockOut('17.4520, 78.4060', 1800);
+          this.performClockOut(`${(this.officeCoords.lat + 0.01).toFixed(4)}, ${(this.officeCoords.lng + 0.01).toFixed(4)}`, 1800);
         }
       },
       { enableHighAccuracy: true, timeout: 6000 }
