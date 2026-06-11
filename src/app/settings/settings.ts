@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-settings',
@@ -12,6 +13,7 @@ import { environment } from '../../environments/environment';
   styleUrl: './settings.css'
 })
 export class Settings implements OnInit {
+  private authService = inject(AuthService);
   // Tabs
   activeTab: 'profile' | 'notifications' | 'preferences' = 'profile';
 
@@ -58,10 +60,7 @@ export class Settings implements OnInit {
   }
 
   fetchUserProfile(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.get<any>(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/users/profile`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           const user = res.data;
@@ -89,16 +88,8 @@ export class Settings implements OnInit {
             }
           }
 
-          // Save loaded user with settings to localStorage
-          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-          localUser.avatar = user.avatar || localUser.avatar;
-          localUser.firstName = user.firstName || localUser.firstName;
-          localUser.lastName = user.lastName || localUser.lastName;
-          localUser.settings = {
-            notifications: this.notifications,
-            preferences: this.preferences
-          };
-          localStorage.setItem('user', JSON.stringify(localUser));
+          // Sync user state in-memory
+          this.authService.setCurrentUser(user);
         }
       },
       error: (err) => {
@@ -127,9 +118,6 @@ export class Settings implements OnInit {
   saveSettings(): void {
     this.isSaving = true;
     
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
     // Split name
     const nameParts = this.profile.fullName.trim().split(' ');
     const firstName = nameParts[0] || 'User';
@@ -147,22 +135,24 @@ export class Settings implements OnInit {
       }
     };
 
-    this.http.put<any>(`${environment.apiUrl}/users/profile`, payload, { headers }).subscribe({
+    this.http.put<any>(`${environment.apiUrl}/users/profile`, payload).subscribe({
       next: (res) => {
         this.isSaving = false;
         if (res.success) {
-          // Save locally
-          localStorage.setItem('themeColor', this.preferences.themeColor);
-          
-          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-          localUser.avatar = this.profile.avatar;
-          localUser.firstName = firstName;
-          localUser.lastName = lastName;
-          localUser.settings = {
-            notifications: this.notifications,
-            preferences: this.preferences
+          // Sync user state in-memory
+          const updatedUser = {
+            ...this.authService.currentUserValue,
+            firstName,
+            lastName,
+            avatar: this.profile.avatar,
+            contactNumber: this.profile.phone,
+            bio: this.profile.bio,
+            settings: {
+              notifications: this.notifications,
+              preferences: this.preferences
+            }
           };
-          localStorage.setItem('user', JSON.stringify(localUser));
+          this.authService.setCurrentUser(updatedUser);
 
           this.applyTheme(this.preferences.themeColor);
           this.applyDarkMode(this.preferences.darkMode);

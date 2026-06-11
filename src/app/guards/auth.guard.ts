@@ -1,43 +1,45 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { map } from 'rxjs/operators';
 
 export const authGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
-  
-  const userJson = localStorage.getItem('user');
-  
-  if (userJson) {
-    try {
-      const user = JSON.parse(userJson);
-      
-      // Basic Role checking based on route path
-      const url = state.url;
-      const role = user.role.toLowerCase();
-      
-      if (url.startsWith('/dashboard') && role !== 'admin') {
-        router.navigate(['/']); // Not authorized for admin dashboard
-        return false;
-      }
-      
-      if (url.startsWith('/manager-dashboard') && role !== 'manager') {
-        router.navigate(['/']); // Not authorized for manager dashboard
-        return false;
-      }
-      
-      if (url.startsWith('/employee-dashboard') && role !== 'employee') {
-        router.navigate(['/']); // Not authorized for employee dashboard
-        return false;
-      }
+  const authService = inject(AuthService);
 
-      return true; // Authenticated and role is appropriate (or no specific role enforced)
-    } catch (e) {
-      localStorage.removeItem('user');
+  const checkUserAndRole = (user: any): boolean => {
+    if (!user) {
       router.navigate(['/']);
       return false;
     }
+
+    const url = state.url;
+    const role = user.role.toLowerCase();
+
+    if (url.startsWith('/dashboard') && role !== 'admin') {
+      router.navigate(['/']);
+      return false;
+    }
+
+    if (url.startsWith('/manager-dashboard') && role !== 'manager') {
+      router.navigate(['/']);
+      return false;
+    }
+
+    if (url.startsWith('/employee-dashboard') && role !== 'employee') {
+      router.navigate(['/']);
+      return false;
+    }
+
+    return true;
+  };
+
+  const currentUser = authService.currentUserValue;
+  if (currentUser) {
+    return checkUserAndRole(currentUser);
   }
 
-  // Not logged in
-  router.navigate(['/']);
-  return false;
+  return authService.loadUserProfile().pipe(
+    map((user) => checkUserAndRole(user))
+  );
 };

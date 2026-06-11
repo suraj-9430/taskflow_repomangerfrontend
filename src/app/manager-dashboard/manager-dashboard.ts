@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { Projectservice } from '../manager/projects/projectservice';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { AiService } from '../services/ai.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-manager-dashboard',
@@ -15,6 +16,7 @@ import { AiService } from '../services/ai.service';
   styleUrl: './manager-dashboard.css',
 })
 export class ManagerDashboard implements OnInit {
+  private authService = inject(AuthService);
   constructor(
     private router: Router, 
     private projectservice: Projectservice,
@@ -42,7 +44,7 @@ export class ManagerDashboard implements OnInit {
   isGeneratingPersonalTodos: boolean = false;
 
   ngOnInit(): void {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = this.authService.currentUserValue || {};
     if (user.firstName) {
       this.managerName = `${user.firstName} ${user.lastName}`;
     }
@@ -58,9 +60,7 @@ export class ManagerDashboard implements OnInit {
   }
 
   loadOfficeCoords(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`).subscribe({
       next: (res) => {
         if (res.lat !== undefined && res.lng !== undefined) {
           this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
@@ -71,9 +71,7 @@ export class ManagerDashboard implements OnInit {
   }
 
   loadManagerProfile(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/users/profile`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/users/profile`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           const user = res.data;
@@ -82,15 +80,8 @@ export class ManagerDashboard implements OnInit {
             this.managerAvatar = user.avatar;
           }
 
-          // Save loaded user with settings to localStorage
-          const localUser = JSON.parse(localStorage.getItem('user') || '{}');
-          localUser.avatar = user.avatar || localUser.avatar;
-          localUser.firstName = user.firstName || localUser.firstName;
-          localUser.lastName = user.lastName || localUser.lastName;
-          if (user.settings) {
-            localUser.settings = user.settings;
-          }
-          localStorage.setItem('user', JSON.stringify(localUser));
+          // Sync in-memory user state
+          this.authService.setCurrentUser(user);
         }
       },
       error: (err) => console.error('Error fetching manager profile', err)
@@ -98,9 +89,7 @@ export class ManagerDashboard implements OnInit {
   }
 
   loadUnreadCount(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/notifications`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/notifications`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.unreadCount = res.data.filter((n: any) => !n.isRead).length;
@@ -261,7 +250,7 @@ export class ManagerDashboard implements OnInit {
   geofenceDistance = 0;
 
   getUserId(): string {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = this.authService.currentUserValue || {};
     return user._id || user.id || 'anonymous';
   }
 
@@ -288,9 +277,7 @@ export class ManagerDashboard implements OnInit {
   clockIn(): void {
     this.isCheckingLocation = true;
     
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`).subscribe({
       next: (res) => {
         if (res.lat !== undefined && res.lng !== undefined) {
           this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
@@ -360,9 +347,7 @@ export class ManagerDashboard implements OnInit {
   clockOut(): void {
     this.isCheckingLocation = true;
     
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`).subscribe({
       next: (res) => {
         if (res.lat !== undefined && res.lng !== undefined) {
           this.officeCoords = { lat: Number(res.lat), lng: Number(res.lng) };
@@ -432,9 +417,7 @@ export class ManagerDashboard implements OnInit {
     if (logs.length > 20) logs = logs.slice(0, 20);
     localStorage.setItem('attendanceLogs_' + userId, JSON.stringify(logs));
 
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.post(`${environment.apiUrl}/attendance/clock-${type === 'Clocked Out' ? 'out' : 'in'}`, log, { headers }).subscribe({
+    this.http.post(`${environment.apiUrl}/attendance/clock-${type === 'Clocked Out' ? 'out' : 'in'}`, log).subscribe({
       next: () => console.log('Attendance synced.'),
       error: () => console.log('Simulated bypass logged.')
     });

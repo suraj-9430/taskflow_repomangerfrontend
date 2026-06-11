@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule, NgClass } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { AiService } from '../services/ai.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-layout',
@@ -19,6 +20,8 @@ export class Layout implements OnInit {
   isManagerView = false;
   isEmployeeView = false;
   isAdminView = false;
+
+  private authService = inject(AuthService);
 
   constructor(private router: Router, private http: HttpClient, private aiService: AiService) {}
 
@@ -53,16 +56,12 @@ export class Layout implements OnInit {
   }
 
   logout(): void {
-    this.http.post(`${environment.apiUrl}/users/logout`, {}, { withCredentials: true }).subscribe({
+    this.authService.logout().subscribe({
       next: () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
         this.router.navigate(['/']);
       },
       error: (err) => {
         console.error('Logout failed', err);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
         this.router.navigate(['/']);
       }
     });
@@ -85,11 +84,8 @@ export class Layout implements OnInit {
     this.isAiTyping = true;
     setTimeout(() => {
       this.isAiTyping = false;
-      const userStr = localStorage.getItem('user');
-      let firstName = 'Team Member';
-      if (userStr) {
-        try { firstName = JSON.parse(userStr).firstName || 'Team Member'; } catch(e) {}
-      }
+      const user = this.authService.currentUserValue;
+      const firstName = user?.firstName || 'Team Member';
       this.aiMessages.push({
         sender: 'assistant',
         text: `### ⚡ Welcome to TaskFlow Co-Pilot, ${firstName}!

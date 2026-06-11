@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-login-page',
@@ -28,6 +29,7 @@ export class LoginPage {
   isLoading = false;
 
   private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
   constructor(private router: Router) {}
 
@@ -40,18 +42,14 @@ export class LoginPage {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.http.post(`${environment.apiUrl}/users/login`, {
+    this.authService.login({
       email: this.email,
       password: this.password
-    }, { withCredentials:false }).subscribe({
+    }).subscribe({
       next: (response: any) => {
         this.isLoading = false;
         
         if (response.success) {
-          // Store user details and token in localStorage
-          localStorage.setItem('user', JSON.stringify(response.user));
-          localStorage.setItem('token', response.token);
-          
           const role = response.user.role;
           
           if (role === 'admin') {
