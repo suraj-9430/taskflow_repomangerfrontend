@@ -125,6 +125,8 @@ graph TB
 | cors | 2.8 | Cross-origin resource sharing |
 | dotenv | 16.x | Environment variables |
 | Google Gemini API | 2.5-flash | Large Language Model integrations |
+| Jest | 29.x | Backend test runner framework |
+| Supertest | 7.x | HTTP assertion library for integration tests |
 
 ---
 
@@ -454,29 +456,45 @@ TaskFlow Pro is optimized for multiple devices (Desktop, Tablet, Mobile) and nat
 
 ## Authentication & Authorization
 
-### JWT Flow (Refresh Token Pattern)
+### Secure In-Memory & Cookie-Based Authentication Flow
 
-TaskFlow Pro implements a secure **Dual-Token Authentication System** to support secure API calls and silent session renewal:
+TaskFlow Pro implements a secure **Cookie-Based Authentication System** to completely isolate sensitive authentication states from XSS vulnerabilities (such as reading from `localStorage`):
 
-1. **Short-Lived Access Token**:
-   - **Lifetime**: 15 minutes.
-   - **Payload**: `{ user: { id, role } }`.
-   - Returned in JSON payload on successful login/refresh, and passed via the `Authorization: Bearer <token>` header.
+1. **HttpOnly Cookie Verification**:
+   - **Access Token (`token`)**: Valid for 15 minutes, set automatically in an `HttpOnly`, secure, `SameSite=Lax` cookie.
+   - **Refresh Token (`refreshToken`)**: Valid for 7 days, set automatically in an `HttpOnly`, secure, `SameSite=Lax` cookie, and saved securely on the User model in MongoDB for rotation checking.
 
-2. **Long-Lived Refresh Token**:
-   - **Lifetime**: 7 days.
-   - **Storage**: Set in an `HttpOnly`, secure, `SameSite=Lax` cookie (`refreshToken`).
-   - Also saved in the User model in the database (`refreshToken` field, not selected by default).
+2. **In-Memory AuthService**:
+   - The [AuthService](file:///c:/Users/rajsu/OneDrive/Desktop/TaskMS/TaskFlow-pro/src/app/services/auth.service.ts) manages the application's authenticated user details inside a `currentUser$` BehaviorSubject in memory.
+   - During application bootstrap, the user profile is fetched once from `GET /api/users/profile` to populate the state. No user details, tokens, or roles are stored inside `localStorage`.
 
-3. **Token Rotation**:
-   - On request to `POST /api/users/refresh-token`, the server verifies the refresh token cookie, generates a *new* access token, signs a *new* refresh token (rotating the old one in database and cookie), and returns the new access token.
+3. **Angular HTTP Interceptor (`authInterceptor`)**:
+   - Automatically clones all outgoing requests to set `withCredentials: true`, ensuring that cookies are attached to all API transactions.
+   - Captures `401 Unauthorized` responses and silently requests a token renewal from `POST /api/users/refresh-token` before retrying the original HTTP call.
 
-4. **Angular HTTP Interceptor (`authInterceptor`)**:
-   - Automatically injects the `Authorization` header to outgoing HTTP requests if the access token exists locally.
-   - Intercepts incoming `401 Unauthorized` responses.
-   - Triggers a silent POST request to `/api/users/refresh-token` with credentials (`withCredentials: true`) to swap the cookie for a new access token, updates the token locally, and retries the original failed request seamlessly.
+4. **Auth Guard & RBAC**:
+   - The route guard [authGuard](file:///c:/Users/rajsu/OneDrive/Desktop/TaskMS/TaskFlow-pro/src/app/guards/auth.guard.ts) reads directly from `AuthService.currentUser$` to authenticate and authorize routes asynchronously based on user roles.
 
 ---
+
+## Testing & Quality Assurance
+
+TaskFlow Pro features comprehensive backend unit and integration test coverage powered by **Jest** and **Supertest**.
+
+### Test Modules
+
+1. **Authentication Middleware Tests** ([auth.middleware.test.ts](file:///c:/Users/rajsu/OneDrive/Desktop/Suraj%20Tradefinance/backend/src/middleware/auth.middleware.test.ts)):
+   - Verifies that `protect` correctly rejects requests without tokens, blocks expired tokens, accepts valid Bearer/Cookie tokens, and passes decoded user identities downstream.
+   - Asserts that the `authorize` RBAC guard grants access to authorized roles and denies it to others (returns 403 Forbidden).
+
+2. **Geofencing & Distance Tests** ([geofence.test.ts](file:///c:/Users/rajsu/OneDrive/Desktop/Suraj%20Tradefinance/backend/src/utils/geofence.test.ts)):
+   - Verifies the accuracy of coordinates distance checking using mock latitude and longitude calculations.
+
+### Running Tests
+Run the Jest test suite from the backend directory:
+```bash
+npm test
+```
 
 ## Email Worker (RabbitMQ)
 
@@ -510,6 +528,7 @@ GEMINI_API_KEY=your_google_gemini_api_key_here
 ### Backend (`backend`)
 * **Start local dev server**: `npm run dev` (Runs backend Express and WebSockets server on port `5000` with hot-reloading)
 * **Start Email Worker**: `npm run worker` (Runs RabbitMQ consumer processing email delivery alerts asynchronously)
+* **Run Unit/Integration Tests**: `npm test` (Executes the Jest test suite covering authentication middleware and geofence distance logic)
 
 ---
 
@@ -520,7 +539,10 @@ GEMINI_API_KEY=your_google_gemini_api_key_here
 src/app/
 ├── app.routes.ts
 ├── guards/auth.guard.ts
-├── services/ai.service.ts
+├── interceptors/auth.interceptor.ts
+├── services/
+│   ├── ai.service.ts
+│   └── auth.service.ts              # In-memory authentication state manager
 ├── leave-management/                # Leave management interface
 ├── approval-hub/                    # Unified approvals center
 ├── chat-channels/                   # Team project chat channels
@@ -533,7 +555,9 @@ src/app/
 src/
 ├── app.ts
 ├── server.ts
-├── middleware/auth.middleware.ts
+├── middleware/
+│   ├── auth.middleware.ts
+│   └── auth.middleware.test.ts      # Authentication Jest integration tests
 ├── models/
 │   ├── user.model.ts
 │   ├── task.model.ts
@@ -560,6 +584,11 @@ src/
 │   ├── approval.routes.ts
 │   ├── chat.routes.ts
 │   └── ai.routes.ts
+├── utils/
+│   ├── rabbitmq.ts
+│   ├── socket.ts
+│   ├── geofence.ts                  # Haversine distance calculator utility
+│   └── geofence.test.ts             # Geofencing unit tests
 ├── seed.ts                          # Seed 40 test users
 └── seedProjects.ts                  # Seed sample projects
 ```
