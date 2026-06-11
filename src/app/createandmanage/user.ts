@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 
@@ -6,42 +6,42 @@ import { environment } from '../../environments/environment';
   providedIn: 'root',
 })
 export class UserService {
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient) {}
 
+  private getHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      headers: new HttpHeaders({
+        Authorization: `Bearer ${token}`
+      })
+    };
   }
+
   createuser(user: any) {
-    return this.http.post(`${environment.apiUrl}/users`, user);
+    return this.http.post(`${environment.apiUrl}/users`, user, this.getHeaders());
   }
   
   updateRole(userId: string, role: string) {
-    return this.http.put(`${environment.apiUrl}/users/${userId}`, { role });
+    return this.http.put(`${environment.apiUrl}/users/${userId}`, { role }, this.getHeaders());
   }
 
   updateStatus(userId: string, empStatus: string) {
-    return this.http.put(`${environment.apiUrl}/users/${userId}`, { empStatus });
+    return this.http.put(`${environment.apiUrl}/users/${userId}`, { empStatus }, this.getHeaders());
   }
-
-  // private deleteuser(user:any){
-  //   return this.http.delete(`${environment.apiUrl}/users`,user);
-  // }
 
   fetchUsers(page: number) {
-    return this.http.get(`${environment.apiUrl}/users/fetchuserlimit?page=${page}&limit=5`);
+    return this.http.get(`${environment.apiUrl}/users/fetchuserlimit?page=${page}&limit=5`, this.getHeaders());
   }
 
-  countuser(role:string){
-    return this.http.get(`${environment.apiUrl}/users/countuserbyrole?role=${role}`);
+  countuser(role: string) {
+    return this.http.get(`${environment.apiUrl}/users/countuserbyrole?role=${role}`, this.getHeaders());
   }
   
-  countactivveusers(){
-    return this.http.get(`${environment.apiUrl}/users/countactiveusers?empStatus=active`);
+  countactivveusers() {
+    return this.http.get(`${environment.apiUrl}/users/countactiveusers?empStatus=active`, this.getHeaders());
   }   
 
-  // getuser() {
-  //   return this.http.get(`${environment.apiUrl}/users`);
-  // }
   getuserbyid(id: number) {
-    return this.http.get(`${environment.apiUrl}/users/` + id);
+    return this.http.get(`${environment.apiUrl}/users/` + id, this.getHeaders());
   }
-
 }
