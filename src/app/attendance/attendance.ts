@@ -43,6 +43,9 @@ export class AttendanceComponent implements OnInit {
   users: any[] = []; // List of all employees/managers (Admin view)
   selectedUserId: string = '';
   showDropdown = false; // Custom dropdown state
+  officeLat = 17.443500;
+  officeLng = 78.385000;
+  resolvedAddress = '';
   
   attendanceLogs: AttendanceRecord[] = [];
   filteredLogs: AttendanceRecord[] = [];
@@ -92,6 +95,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   initializeData(): void {
+    this.loadOfficeCoords();
     if (this.isAdmin) {
       // 1. Fetch all users so admin can select one
       this.fetchUsers();
@@ -103,6 +107,65 @@ export class AttendanceComponent implements OnInit {
       // Fetch personal logs
       this.fetchPersonalAttendance();
     }
+  }
+
+  loadOfficeCoords(): void {
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+      next: (res) => {
+        if (res.lat !== undefined && res.lng !== undefined) {
+          this.officeLat = Number(res.lat);
+          this.officeLng = Number(res.lng);
+          this.resolveAddress();
+        }
+      },
+      error: (err) => console.error('Error loading office coords', err)
+    });
+  }
+
+  resolveAddress(): void {
+    if (!this.officeLat || !this.officeLng) return;
+    this.resolvedAddress = 'Searching location name...';
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${this.officeLat}&lon=${this.officeLng}`;
+    this.http.get<any>(url).subscribe({
+      next: (res) => {
+        if (res && res.display_name) {
+          this.resolvedAddress = res.display_name;
+        } else {
+          this.resolvedAddress = 'Unknown Location';
+        }
+      },
+      error: (err) => {
+        console.warn('Geocoding search failed:', err);
+        this.resolvedAddress = 'Location resolved (unable to load street address)';
+      }
+    });
+  }
+
+  saveOfficeCoords(): void {
+    if (this.officeLat === undefined || this.officeLng === undefined) {
+      alert('Please enter valid coordinates');
+      return;
+    }
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    this.http.put<any>(
+      `${environment.apiUrl}/attendance/office-coords`,
+      { lat: this.officeLat, lng: this.officeLng },
+      { headers }
+    ).subscribe({
+      next: (res) => {
+        if (res.success) {
+          alert('🟢 Office coordinates updated successfully!');
+          this.resolveAddress();
+        }
+      },
+      error: (err) => {
+        console.error('Error saving office coords', err);
+        alert('❌ Failed to update office coordinates');
+      }
+    });
   }
 
   fetchUsers(): void {
