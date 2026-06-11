@@ -17,26 +17,37 @@ This document provides a professional, high-level summary of the **TaskFlow Pro*
 *   **Manager Dashboard:** Operational pipeline view for project creations, assignments, team management, and analytics.
 *   **Employee Dashboard:** Focused workflow interface featuring personal lists, kanban boards, and task execution guides.
 
-### 💬 Real-Time Collaboration (Active Task Rooms)
-*   **Instant Discussion Modals:** Live chatting functionality nested directly within task records.
-*   **Event-Driven Synchronization:** Built on high-performance Socket.IO channels. When one user sends a comment, the other active user receives it instantly on their screen with **zero page refreshes**.
-*   **Deduplication Safety:** Integrated frontend duplicate checks prevent message double-rendering and maintain clean timelines.
+### 💬 Real-Time Collaboration & Channels
+*   **Project-Level Chat Channels:** Dedicated communication rooms mapped directly to active projects, keeping conversations organized and contextual.
+*   **Instant Task-Level Discussions:** Live chatting functionality nested directly within individual task records.
+*   **User Mentions & Quick Replies:** Support for `@username` mentions to trigger push notifications, and preset quick-reply chips for fast response actions.
+*   **Event-Driven Synchronization:** Built on high-performance Socket.IO channels. When one user sends a comment, all active channel/task subscribers receive it instantly with **zero page refreshes**.
 
 ### ⏰ Advanced Geofence Attendance System
 *   **Precision Coordinates:** Anchored to custom office coordinates (`17.443500, 78.385000`) with a strict `10-meter` geofence radius.
 *   **Automatic Office vs. Remote Presence:**
     *   *Within 10m:* Instantly marked as **Office Present** (automatic confirmation).
-    *   *Beyond 10m:* Automatically classified as **Remote Present (Pending)**, sending a real-time request to the Admin for approval.
-*   **Admin Approval Center:** A dedicated approval workflow panel allowing administrators to review, approve, or reject remote check-in requests.
+    *   *Beyond 10m:* Automatically classified as **Remote Present (Pending)**, sending a request to the Admin.
+*   **Admin Approval Center:** Allows administrators to review, approve, or reject remote check-in requests.
 
 ### 📄 Leave Management & Auditing
-*   **Admin Leave History Panel:** Admins can view leave histories across all employees, update statuses, audit previous logs, and manage requests centrally.
+*   **Leave History Panel:** Detailed views of leave history across all employees, enabling status updates and central auditing.
 *   **Input Safeguards:** Built-in validation limits to prevent users from requesting more leave than their available balance.
 *   **Intelligent Calendar Rules:** Geolocation/temporal blocklists to prevent employees from scheduling leave on past dates.
 
-### 🤖 Embedded AI Workflow Co-Pilot
-*   **Automatic Subtask Breakdown:** Generates standard checklists directly into task descriptions using keyword scopes.
-*   **Assistant Chat Panel:** Interactive helper providing daily agenda summaries, workload statistics, overdue task warnings, and contextual advice.
+### 🗳️ Unified Approvals Workspace
+*   **Comprehensive Workflow Coverage:** Expand approvals far beyond attendance and leaves.
+*   **Multi-Category Request Channels:** Includes **Expense Reimbursement**, **Task Closure Approval**, **Overtime Approval**, **Shift Swap Approval**, and **Document Sign-offs**.
+*   **Auditable Action Trails:** Captures remarks, specific category metadata, request details (like swap partners, target dates, and expense amounts), and processing outcomes.
+
+### 🤖 Embedded AI Workflow Co-Pilot (Powered by Google Gemini 2.5 Flash)
+*   **Automatic Subtask Breakdown:** Generates checklists directly into task descriptions using keyword scopes.
+*   **Interactive Chat Assistant Panel:** Contextual helper providing daily agenda summaries, workload statistics, overdue task warnings, and expert advice.
+*   **Auto-Prioritizing Tasks:** AI-driven suggestion of optimal execution order based on deadlines.
+*   **Workload Balancing Suggestions:** Analyzes assignee backlogs to recommend task delegation and avoid bottlenecking.
+*   **Anomaly Audit Logs:** Analyzes attendance patterns and consecutive leaves to identify anomalies and trends.
+*   **Smart Meeting & Task Summarization:** Instantly digests meeting notes or comment threads into clean bullet points.
+*   **Natural Language Reporting:** Creates insights reports on project performance and completion velocities.
 
 ---
 
