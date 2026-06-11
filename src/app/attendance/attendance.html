@@ -1,33 +1,54 @@
 <div class="attendance-container animate-fadeIn">
   <!-- Title Header -->
-  <div class="page-title">
+  <div class="page-title" style="flex-wrap: wrap; gap: 15px;">
     <div>
       <h1>Workplace <span>Attendance</span> Tracker</h1>
       <p>Monitor physical office presence, remote coordinates logs, and monthly calendar sheets</p>
     </div>
     
-    <!-- Admin User Selector (Custom Premium Dropdown) -->
-    @if (isAdmin) {
-      <div class="selector-card glassmorphic-panel">
-        <label><i class="fa-solid fa-users-gear text-accent"></i> Select Member:</label>
-        <div class="custom-select-wrapper">
-          <div class="custom-select-trigger" [class.active]="showDropdown" (click)="toggleDropdown()">
-            <span><i class="fa-solid fa-circle-user text-accent"></i> {{ getSelectedUserFullNameWithRole() }}</span>
-            <i class="fa-solid fa-chevron-down chevron" [class.open]="showDropdown"></i>
-          </div>
-          @if (showDropdown) {
-            <div class="custom-options-container">
-              @for(user of users; track user._id) {
-                <div class="custom-option" [class.selected]="selectedUserId === (user._id || user.id)" (click)="selectUser(user)">
-                  <span class="option-name">{{ user.firstName }} {{ user.lastName }}</span>
-                  <span class="option-role">{{ user.designation || user.role }}</span>
-                </div>
-              }
+    <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+      <!-- Admin User Selector (Custom Premium Dropdown) -->
+      @if (isAdmin) {
+        <div class="selector-card glassmorphic-panel">
+          <label><i class="fa-solid fa-users-gear text-accent"></i> Select Member:</label>
+          <div class="custom-select-wrapper">
+            <div class="custom-select-trigger" [class.active]="showDropdown" (click)="toggleDropdown()">
+              <span><i class="fa-solid fa-circle-user text-accent"></i> {{ getSelectedUserFullNameWithRole() }}</span>
+              <i class="fa-solid fa-chevron-down chevron" [class.open]="showDropdown"></i>
             </div>
-          }
+            @if (showDropdown) {
+              <div class="custom-options-container">
+                @for(user of users; track user._id) {
+                  <div class="custom-option" [class.selected]="selectedUserId === (user._id || user.id)" (click)="selectUser(user)">
+                    <span class="option-name">{{ user.firstName }} {{ user.lastName }}</span>
+                    <span class="option-role">{{ user.designation || user.role }}</span>
+                  </div>
+                }
+              </div>
+            }
+          </div>
         </div>
-      </div>
-    }
+        
+        <!-- Admin Geofence Location Settings Card -->
+        <div class="selector-card glassmorphic-panel" style="min-width: 380px;">
+          <label><i class="fa-solid fa-location-crosshairs text-accent"></i> Office Coordinates Settings:</label>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 5px;">
+            <input type="number" step="0.000001" placeholder="Lat" [(ngModel)]="officeLat" style="width: 100px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='var(--color-accent, #ff9900)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+            <input type="number" step="0.000001" placeholder="Lng" [(ngModel)]="officeLng" style="width: 100px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 13px; outline: none; transition: border 0.2s;" onfocus="this.style.borderColor='var(--color-accent, #ff9900)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+            <button (click)="resolveAddress()" class="btn-action" style="margin: 0; padding: 6px 10px; border-radius: 6px; font-size: 12px; display: flex; align-items: center; gap: 4px; height: 32px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.05); color: white; transition: background 0.2s; cursor: pointer;" title="Preview Location Name">
+              <i class="fa-solid fa-magnifying-glass"></i> Preview
+            </button>
+            <button (click)="saveOfficeCoords()" class="btn-action approve" style="margin: 0; padding: 6px 12px; border-radius: 6px; font-size: 13px; display: flex; align-items: center; gap: 5px; height: 32px; border: none; background: #28a745; color: white; font-weight: 500; transition: filter 0.2s; cursor: pointer;">
+              <i class="fa-solid fa-floppy-disk"></i> Set Coords
+            </button>
+          </div>
+          <div *ngIf="resolvedAddress" style="margin-top: 8px; font-size: 11px; color: #bbb; display: flex; align-items: flex-start; gap: 5px; max-width: 380px; word-break: break-word; line-height: 1.4;">
+            <i class="fa-solid fa-map-location-dot text-accent" style="margin-top: 2px;"></i>
+            <span>{{ resolvedAddress }}</span>
+          </div>
+        </div>
+      }
+    </div>
   </div>
 
   <!-- 🛡️ Admin remote work approvals queue -->
