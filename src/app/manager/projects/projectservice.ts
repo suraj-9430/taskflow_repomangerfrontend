@@ -10,10 +10,8 @@ export class Projectservice {
 
   constructor(private http: HttpClient) {}
 
-  // ── Auth header helper ────────────────────
   private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token') || '';
-    return new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return new HttpHeaders();
   }
 
   // ── Users ─────────────────────────────────

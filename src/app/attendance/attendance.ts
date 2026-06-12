@@ -1,9 +1,10 @@
-import { Component, OnInit, HostListener, ElementRef } from '@angular/core';
+import { Component, OnInit, HostListener, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { AuthService } from '../services/auth.service';
 
 export interface AttendanceRecord {
   _id?: string;
@@ -64,6 +65,8 @@ export class AttendanceComponent implements OnInit {
   attendancePercentage = 0;
   totalWorkingHours = '0.0';
 
+  private authService = inject(AuthService);
+
   constructor(
     private http: HttpClient,
     private router: Router,
@@ -78,10 +81,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      this.currentUser = JSON.parse(userStr);
-    }
+    this.currentUser = this.authService.currentUserValue;
     
     this.checkViewRole();
     this.initializeData();
@@ -110,9 +110,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   loadOfficeCoords(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/office-coords`).subscribe({
       next: (res) => {
         if (res.lat !== undefined && res.lng !== undefined) {
           this.officeLat = Number(res.lat);
@@ -148,12 +146,9 @@ export class AttendanceComponent implements OnInit {
       alert('Please enter valid coordinates');
       return;
     }
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
     this.http.put<any>(
       `${environment.apiUrl}/attendance/office-coords`,
-      { lat: this.officeLat, lng: this.officeLng },
-      { headers }
+      { lat: this.officeLat, lng: this.officeLng }
     ).subscribe({
       next: (res) => {
         if (res.success) {
@@ -169,10 +164,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   fetchUsers(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.get<any>(`${environment.apiUrl}/users`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/users`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           // Filter out other admins or just keep employees and managers
@@ -188,10 +180,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   fetchPersonalAttendance(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.get<any>(`${environment.apiUrl}/attendance/history`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/history`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.attendanceLogs = res.data;
@@ -203,10 +192,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   fetchAllAttendance(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.get<any>(`${environment.apiUrl}/attendance/all`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/all`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.attendanceLogs = res.data;
@@ -218,10 +204,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   fetchPendingApprovals(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.get<any>(`${environment.apiUrl}/attendance/pending`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/pending`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.pendingApprovals = res.data;
@@ -232,10 +215,7 @@ export class AttendanceComponent implements OnInit {
   }
 
   approveRecord(id: string): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.put<any>(`${environment.apiUrl}/attendance/approve/${id}`, {}, { headers }).subscribe({
+    this.http.put<any>(`${environment.apiUrl}/attendance/approve/${id}`, {}).subscribe({
       next: (res) => {
         if (res.success) {
           alert('🟢 Remote Check-In approved successfully!');
@@ -250,10 +230,7 @@ export class AttendanceComponent implements OnInit {
 
   rejectRecord(id: string): void {
     if (confirm('Are you sure you want to REJECT this remote work check-in? it will mark this day as Absent.')) {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      this.http.put<any>(`${environment.apiUrl}/attendance/reject/${id}`, {}, { headers }).subscribe({
+      this.http.put<any>(`${environment.apiUrl}/attendance/reject/${id}`, {}).subscribe({
         next: (res) => {
           if (res.success) {
             alert('🔴 Remote Check-In rejected.');
@@ -280,10 +257,7 @@ export class AttendanceComponent implements OnInit {
   onUserChange(): void {
     if (!this.selectedUserId) return;
     
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-    
-    this.http.get<any>(`${environment.apiUrl}/attendance/user/${this.selectedUserId}`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/attendance/user/${this.selectedUserId}`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           // These logs are specifically for the selected user

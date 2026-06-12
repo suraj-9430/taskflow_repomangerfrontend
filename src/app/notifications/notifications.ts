@@ -52,10 +52,7 @@ export class Notifications implements OnInit {
   }
 
   fetchNotifications(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.get<any>(`${environment.apiUrl}/notifications`, { headers }).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/notifications`).subscribe({
       next: (res) => {
         if (res.success && res.data) {
           this.notifications = res.data.map((n: any) => ({
@@ -115,10 +112,7 @@ export class Notifications implements OnInit {
   markAsRead(notification: NotificationItem): void {
     if (notification.isRead) return;
 
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.put<any>(`${environment.apiUrl}/notifications/${notification.id}/read`, {}, { headers }).subscribe({
+    this.http.put<any>(`${environment.apiUrl}/notifications/${notification.id}/read`, {}).subscribe({
       next: () => {
         notification.isRead = true;
       },
@@ -131,14 +125,8 @@ export class Notifications implements OnInit {
   toggleReadStatus(notification: NotificationItem, event: MouseEvent): void {
     event.stopPropagation();
     
-    // Toggle state on backend
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    // Since we only have a read endpoint, if they mark as unread, we mock it locally
-    // or hit the same read endpoint. If they want to toggle read state:
     if (!notification.isRead) {
-      this.http.put<any>(`${environment.apiUrl}/notifications/${notification.id}/read`, {}, { headers }).subscribe({
+      this.http.put<any>(`${environment.apiUrl}/notifications/${notification.id}/read`, {}).subscribe({
         next: () => {
           notification.isRead = true;
         },
@@ -151,10 +139,7 @@ export class Notifications implements OnInit {
   }
 
   markAllAsRead(): void {
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.put<any>(`${environment.apiUrl}/notifications/mark-all-read`, {}, { headers }).subscribe({
+    this.http.put<any>(`${environment.apiUrl}/notifications/mark-all-read`, {}).subscribe({
       next: () => {
         this.notifications.forEach(n => n.isRead = true);
       },
@@ -166,10 +151,7 @@ export class Notifications implements OnInit {
 
   deleteNotification(id: string, event: MouseEvent): void {
     event.stopPropagation();
-    const token = localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
-
-    this.http.delete<any>(`${environment.apiUrl}/notifications/${id}`, { headers }).subscribe({
+    this.http.delete<any>(`${environment.apiUrl}/notifications/${id}`).subscribe({
       next: () => {
         this.notifications = this.notifications.filter(n => n.id !== id);
       },

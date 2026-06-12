@@ -15,10 +15,7 @@ export class AiService {
    * Returns the Authorization header with JWT token from localStorage.
    */
   private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem('token');
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
+    return new HttpHeaders();
   }
 
   /**
