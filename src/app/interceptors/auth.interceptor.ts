@@ -15,9 +15,12 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const http = inject(HttpClient);
   const authService = inject(AuthService);
 
-  // Set withCredentials globally so HttpOnly cookies are automatically sent
+  // Set withCredentials globally so HttpOnly cookies are automatically sent (for refresh token)
+  // Also attach the access token from localStorage for cross-domain requests
+  const token = localStorage.getItem('accessToken');
   const authReq = req.clone({
-    withCredentials: true
+    withCredentials: true,
+    setHeaders: token ? { Authorization: `Bearer ${token}` } : {}
   });
 
   return next(authReq).pipe(
@@ -36,14 +39,19 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
     isRefreshing = true;
     refreshTokenSubject.next(null);
 
-    return http.post(`${environment.apiUrl}/users/refresh-token`, {}, { withCredentials: true }).pipe(
-      switchMap(() => {
+    return http.post<any>(`${environment.apiUrl}/users/refresh-token`, {}, { withCredentials: true }).pipe(
+      switchMap((res: any) => {
         isRefreshing = false;
         refreshTokenSubject.next(true);
 
-        // Retry original request
+        if (res && res.token) {
+          localStorage.setItem('accessToken', res.token);
+        }
+
+        const newToken = localStorage.getItem('accessToken');
         return next(request.clone({
-          withCredentials: true
+          withCredentials: true,
+          setHeaders: newToken ? { Authorization: `Bearer ${newToken}` } : {}
         }));
       }),
       catchError((err) => {
@@ -60,8 +68,10 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
       filter(success => success !== null),
       take(1),
       switchMap(() => {
+        const currentToken = localStorage.getItem('accessToken');
         return next(request.clone({
-          withCredentials: true
+          withCredentials: true,
+          setHeaders: currentToken ? { Authorization: `Bearer ${currentToken}` } : {}
         }));
       })
     );

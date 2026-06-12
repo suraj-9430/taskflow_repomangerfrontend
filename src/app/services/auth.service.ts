@@ -41,6 +41,9 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/users/login`, credentials, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.user) {
+          if (res.token) {
+            localStorage.setItem('accessToken', res.token);
+          }
           this.currentUserSubject.next(res.user);
         }
       })
@@ -50,6 +53,7 @@ export class AuthService {
   logout(): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/users/logout`, {}, { withCredentials: true }).pipe(
       tap(() => {
+        localStorage.removeItem('accessToken');
         this.currentUserSubject.next(null);
       }),
       catchError((err) => {
