@@ -53,11 +53,16 @@ export class MyTasks implements OnInit {
           const userStr = localStorage.getItem('user');
           if (userStr) {
             const user = JSON.parse(userStr);
-            const activeUserId = user.id;
+            const activeUserId = user._id || user.id;
 
-            // Filter tasks assigned to the logged-in user
-            this.myTasks = res.data.filter((t: any) => t.assignedTo && t.assignedTo._id === activeUserId)
-              .map((t: any) => ({
+              // Filter tasks assigned to or created by the logged-in user
+              this.myTasks = res.data.filter((t: any) => {
+                const isAssignee = t.assignedTo && (t.assignedTo._id === activeUserId || t.assignedTo.id === activeUserId);
+                const isCreator = t.createdBy && (t.createdBy._id === activeUserId || t.createdBy.id === activeUserId || t.createdBy === activeUserId);
+                // Also show tasks if the user is an admin or manager
+                const isAdmin = user.role === 'Admin' || user.designation?.toLowerCase().includes('admin');
+                return isAssignee || isCreator || isAdmin;
+              }).map((t: any) => ({
                 id: t._id,
                 title: t.title,
                 description: t.description || 'No description provided.',

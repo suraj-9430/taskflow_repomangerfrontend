@@ -136,18 +136,24 @@ export class EmployeeDashboard implements OnInit {
       next: (res: any) => {
         const allProjects = res.data || [];
         // Filter projects where I am assigned
-        this.myProjects = allProjects.filter((p: any) => 
-          (p.assignees || []).some((a: any) => String(a._id || a) === String(this.currentEmployee.id))
-        );
+        this.myProjects = allProjects.filter((p: any) => {
+          const isAssignee = (p.assignees || []).some((a: any) => String(a._id || a) === String(this.currentEmployee.id));
+          const isCreator = p.createdBy && (String(p.createdBy._id || p.createdBy) === String(this.currentEmployee.id));
+          const isAdmin = this.currentEmployee.role === 'Admin' || this.currentEmployee.role?.toLowerCase().includes('admin');
+          return isAssignee || isCreator || isAdmin;
+        });
 
         // Load Tasks
         this.projectservice.getAllTasks().subscribe({
           next: (taskRes: any) => {
             const allTasks = taskRes.data || [];
             // Filter tasks where I am assigned
-            this.myTasks = allTasks.filter((t: any) => 
-              String(t.assignedTo?._id || t.assignedTo) === String(this.currentEmployee.id)
-            ).map((t: any) => {
+            this.myTasks = allTasks.filter((t: any) => {
+              const isAssignee = String(t.assignedTo?._id || t.assignedTo) === String(this.currentEmployee.id);
+              const isCreator = t.createdBy && (String(t.createdBy?._id || t.createdBy) === String(this.currentEmployee.id));
+              const isAdmin = this.currentEmployee.role === 'Admin' || this.currentEmployee.role?.toLowerCase().includes('admin');
+              return isAssignee || isCreator || isAdmin;
+            }).map((t: any) => {
               // Normalize ids for frontend use
               const projectId = typeof t.projectId === 'object' ? t.projectId._id : t.projectId;
               return { ...t, projectId, _id: t._id };
@@ -818,34 +824,36 @@ export class EmployeeDashboard implements OnInit {
     this.isGeneratingPersonalTodos = true;
     
     if (activeTasks.length === 0) {
-      setTimeout(() => {
-        this.isGeneratingPersonalTodos = false;
-        const defaultAITasks = [
-          'Log daily attendance punch status',
-          'Review open pull requests in repository backlog',
-          'Write code comments for recently implemented methods',
-          'Organize visual layout structure for next meeting demo',
-          'Check task board discussion threads for comments'
-        ];
-        let added = 0;
-        defaultAITasks.forEach(taskText => {
-          const isDup = this.personalTodos.some(t => t.text.toLowerCase() === taskText.toLowerCase());
-          if (!isDup) {
-            this.personalTodos.push({
-              id: Date.now().toString() + '-' + added,
-              text: '🤖 ' + taskText,
-              completed: false,
-              createdAt: new Date().toISOString()
-            });
-            added++;
+      // Use real API to generate a daily plan when there are no active tasks, just based on projects
+      this.aiService.generateDailyPlan(this.myProjects, this.myTasks).subscribe({
+        next: (managerAITasks: string[]) => {
+          this.isGeneratingPersonalTodos = false;
+          let added = 0;
+          managerAITasks.forEach(taskText => {
+            const isDup = this.personalTodos.some(t => t.text.toLowerCase() === ('🤖 ' + taskText).toLowerCase() || t.text.toLowerCase() === taskText.toLowerCase());
+            if (!isDup) {
+              this.personalTodos.push({
+                id: Date.now().toString() + '-' + added,
+                text: '🤖 ' + taskText,
+                completed: false,
+                createdAt: new Date().toISOString()
+              });
+              added++;
+            }
+          });
+
+          if (added > 0) {
+            this.savePersonalTodos();
+            this.playSuccessChime();
           }
-        });
-        if (added > 0) {
-          this.savePersonalTodos();
-          this.playSuccessChime();
+          alert(`🤖 AI Co-Pilot generated ${added} daily To-Dos for you!`);
+        },
+        error: (err) => {
+          this.isGeneratingPersonalTodos = false;
+          console.error(err);
+          alert('Failed to connect to AI engine.');
         }
-        alert('🤖 AI Co-Pilot generated 5 daily engineering To-Dos for you!');
-      }, 1500);
+      });
     } else {
       const firstTask = activeTasks[0];
       this.aiService.generateBreakdown(firstTask.title, firstTask.description).subscribe({
@@ -873,7 +881,7 @@ export class EmployeeDashboard implements OnInit {
         error: (err) => {
           this.isGeneratingPersonalTodos = false;
           console.error(err);
-          alert('Failed to connect to AI engine. Defaulting to standard roadmap.');
+          alert('Failed to connect to AI engine.');
         }
       });
     }

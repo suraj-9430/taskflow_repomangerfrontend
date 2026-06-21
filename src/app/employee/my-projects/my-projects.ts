@@ -38,11 +38,14 @@ export class MyProjects implements OnInit {
           const userStr = localStorage.getItem('user');
           if (userStr) {
             const user = JSON.parse(userStr);
-            const activeUserId = user.id;
+            const activeUserId = user._id || user.id;
 
-            this.myProjects = res.data.filter((p: any) => 
-              p.assignees && p.assignees.some((a: any) => a._id === activeUserId)
-            ).map((p: any) => ({
+            this.myProjects = res.data.filter((p: any) => {
+              const isAssignee = p.assignees && p.assignees.some((a: any) => a._id === activeUserId || a.id === activeUserId);
+              const isCreator = p.createdBy && (p.createdBy._id === activeUserId || p.createdBy.id === activeUserId || p.createdBy === activeUserId);
+              const isAdmin = user.role === 'Admin' || user.designation?.toLowerCase().includes('admin');
+              return isAssignee || isCreator || isAdmin;
+            }).map((p: any) => ({
               id: p._id,
               name: p.projectName,
               description: p.description || 'No description provided.',

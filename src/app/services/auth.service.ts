@@ -25,8 +25,10 @@ export class AuthService {
     return this.http.get<any>(`${environment.apiUrl}/users/profile`, { withCredentials: true }).pipe(
       tap(res => {
         if (res.success && res.data) {
+          localStorage.setItem('user', JSON.stringify(res.data));
           this.currentUserSubject.next(res.data);
         } else {
+          localStorage.removeItem('user');
           this.currentUserSubject.next(null);
         }
       }),
@@ -44,6 +46,7 @@ export class AuthService {
           if (res.token) {
             localStorage.setItem('accessToken', res.token);
           }
+          localStorage.setItem('user', JSON.stringify(res.user));
           this.currentUserSubject.next(res.user);
         }
       })
@@ -54,6 +57,7 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/users/logout`, {}, { withCredentials: true }).pipe(
       tap(() => {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
         this.currentUserSubject.next(null);
       }),
       catchError((err) => {

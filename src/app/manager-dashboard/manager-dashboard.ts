@@ -603,52 +603,37 @@ export class ManagerDashboard implements OnInit {
   generateAIPersonalTodos(): void {
     this.isGeneratingPersonalTodos = true;
     
-    // Generate specialized Manager daily task items based on active project names
-    setTimeout(() => {
-      this.isGeneratingPersonalTodos = false;
-      
-      const managerAITasks: string[] = [];
-      if (this.projects.length > 0) {
-        const p1 = this.projects[0];
-        managerAITasks.push(`Review overall timeline and progress for project "${p1.projectName || p1.name}"`);
-        managerAITasks.push(`Check assigned assignees workload statuses for "${p1.projectName || p1.name}"`);
-      } else {
-        managerAITasks.push('Conduct project roadmap estimations alignment audit');
-      }
+    this.aiService.generateDailyPlan(this.projects, this.recentTasks).subscribe({
+      next: (managerAITasks: string[]) => {
+        this.isGeneratingPersonalTodos = false;
+        
+        let added = 0;
+        managerAITasks.forEach(taskText => {
+          const isDup = this.personalTodos.some(t => t.text.toLowerCase() === ('🤖 ' + taskText).toLowerCase() || t.text.toLowerCase() === taskText.toLowerCase());
+          if (!isDup) {
+            this.personalTodos.push({
+              id: Date.now().toString() + '-' + added,
+              text: '🤖 ' + taskText,
+              completed: false,
+              createdAt: new Date().toISOString()
+            });
+            added++;
+          }
+        });
 
-      if (this.recentTasks.length > 0) {
-        const unassigned = this.recentTasks.filter(t => !t.assignedTo);
-        if (unassigned.length > 0) {
-          managerAITasks.push(`Assign open team backlog task: "${unassigned[0].title}"`);
+        if (added > 0) {
+          this.savePersonalTodos();
+          this.playSuccessChime();
+          alert(`🤖 AI Co-Pilot generated ${added} daily tasks based on your active projects & tasks!`);
+        } else {
+          alert('🤖 AI Co-Pilot generated tasks, but they are already in your list!');
         }
-        const highPriority = this.recentTasks.filter(t => t.priority === 'High' && t.status !== 'Completed');
-        if (highPriority.length > 0) {
-          managerAITasks.push(`Follow up with assignee on High Priority task: "${highPriority[0].title}"`);
-        }
+      },
+      error: (err) => {
+        this.isGeneratingPersonalTodos = false;
+        console.error('Failed to generate daily plan', err);
+        alert('Failed to connect to AI Co-Pilot.');
       }
-
-      managerAITasks.push('Audit employee attendance logs and approve pending remote work requests');
-      managerAITasks.push('Schedule daily standup meeting and post notes details');
-      
-      let added = 0;
-      managerAITasks.forEach(taskText => {
-        const isDup = this.personalTodos.some(t => t.text.toLowerCase() === taskText.toLowerCase());
-        if (!isDup) {
-          this.personalTodos.push({
-            id: Date.now().toString() + '-' + added,
-            text: '🤖 ' + taskText,
-            completed: false,
-            createdAt: new Date().toISOString()
-          });
-          added++;
-        }
-      });
-
-      if (added > 0) {
-        this.savePersonalTodos();
-        this.playSuccessChime();
-      }
-      alert('🤖 AI Co-Pilot analyzed active projects & tasks to generate manager daily tasks!');
-    }, 1500);
+    });
   }
 }
