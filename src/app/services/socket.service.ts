@@ -17,7 +17,7 @@ export class SocketService {
       return;
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('accessToken');
     if (!token) return;
 
     // Connect to the backend
