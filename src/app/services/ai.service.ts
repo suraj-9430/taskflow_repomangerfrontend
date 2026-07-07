@@ -11,12 +11,7 @@ export class AiService {
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Returns the Authorization header with JWT token from localStorage.
-   */
-  private getAuthHeaders(): HttpHeaders {
-    return new HttpHeaders();
-  }
+
 
   /**
    * Generates a subtask checklist for a given task title and description.
@@ -26,8 +21,7 @@ export class AiService {
     return this.http
       .post<{ success: boolean; data: string[] }>(
         `${this.apiUrl}/ai/breakdown`,
-        { title, description },
-        { headers: this.getAuthHeaders() }
+        { title, description }
       )
       .pipe(
         map((res) => res.data)
@@ -41,8 +35,7 @@ export class AiService {
     return this.http
       .post<{ success: boolean; reply: string }>(
         `${this.apiUrl}/ai/chat`,
-        { message },
-        { headers: this.getAuthHeaders() }
+        { message }
       )
       .pipe(
         map((res) => res.reply)
@@ -57,8 +50,7 @@ export class AiService {
     return this.http
       .post<{ success: boolean; data: string[] }>(
         `${this.apiUrl}/ai/daily-plan`,
-        { projects, tasks },
-        { headers: this.getAuthHeaders() }
+        { projects, tasks }
       )
       .pipe(
         map((res) => res.data)

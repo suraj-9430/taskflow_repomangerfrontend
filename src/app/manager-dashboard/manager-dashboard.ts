@@ -439,60 +439,11 @@ export class ManagerDashboard implements OnInit {
   }
 
   playSuccessChime(): void {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-
-      const context = new AudioContextClass();
-      if (context.state === 'suspended') {
-        context.resume();
-      }
-      
-      const osc1 = context.createOscillator();
-      const gain1 = context.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(523.25, context.currentTime); 
-      gain1.gain.setValueAtTime(0.12, context.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.3);
-      osc1.connect(gain1);
-      gain1.connect(context.destination);
-      osc1.start();
-      osc1.stop(context.currentTime + 0.3);
-
-      const osc2 = context.createOscillator();
-      const gain2 = context.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(659.25, context.currentTime + 0.08); 
-      gain2.gain.setValueAtTime(0.12, context.currentTime + 0.08);
-      gain2.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
-      osc2.connect(gain2);
-      gain2.connect(context.destination);
-      osc2.start(context.currentTime + 0.08);
-      osc2.stop(context.currentTime + 0.4);
-    } catch (e) {}
+    new Audio('/assets/chime.mp3').play().catch(() => {});
   }
 
   playWarningChime(): void {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-
-      const context = new AudioContextClass();
-      if (context.state === 'suspended') {
-        context.resume();
-      }
-      
-      const osc1 = context.createOscillator();
-      const gain1 = context.createGain();
-      osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(220, context.currentTime); 
-      gain1.gain.setValueAtTime(0.08, context.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.5);
-      osc1.connect(gain1);
-      gain1.connect(context.destination);
-      osc1.start();
-      osc1.stop(context.currentTime + 0.5);
-    } catch (e) {}
+    new Audio('/assets/warning.mp3').play().catch(() => {});
   }
 
   // ── Personal To-Do & Meeting Notes Pad Handlers ──
