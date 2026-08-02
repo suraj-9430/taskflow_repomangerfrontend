@@ -63,6 +63,18 @@
             </a>
           </li>
           <li>
+            <a routerLink="/manager-dashboard/ai-health" routerLinkActive="active">
+              <i class="fa-solid fa-square-poll-vertical text-amber"></i>
+              <span>AI Health Center</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/manager-dashboard/skills" routerLinkActive="active">
+              <i class="fa-solid fa-award text-amber"></i>
+              <span>Skills Matrix</span>
+            </a>
+          </li>
+          <li>
             <a routerLink="/manager-dashboard/calendar" routerLinkActive="active">
               <i class="fa-solid fa-calendar-days"></i>
               <span>Calendar</span>
@@ -113,6 +125,12 @@
             <a routerLink="/employee-dashboard/leave" routerLinkActive="active">
               <i class="fa-solid fa-calendar-minus"></i>
               <span>Leave</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/employee-dashboard/skills" routerLinkActive="active">
+              <i class="fa-solid fa-award text-amber"></i>
+              <span>Skills Matrix</span>
             </a>
           </li>
           <li>
@@ -176,6 +194,18 @@
             </a>
           </li>
           <li>
+            <a routerLink="/dashboard/ai-health" routerLinkActive="active">
+              <i class="fa-solid fa-square-poll-vertical text-amber"></i>
+              <span>AI Health Center</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/dashboard/skills" routerLinkActive="active">
+              <i class="fa-solid fa-award text-amber"></i>
+              <span>Skills Matrix</span>
+            </a>
+          </li>
+          <li>
             <a routerLink="/dashboard/calendar" routerLinkActive="active">
               <i class="fa-solid fa-calendar-days"></i>
               <span>Calendar</span>
@@ -202,6 +232,12 @@
           <a [routerLink]="getDashboardPrefix() + '/notifications'" routerLinkActive="active">
             <i class="fa-solid fa-bell"></i>
             <span>Notifications</span>
+          </a>
+        </li>
+        <li>
+          <a [routerLink]="getDashboardPrefix() + '/command-center'" routerLinkActive="active">
+            <i class="fa-solid fa-terminal text-amber"></i>
+            <span>Command Center</span>
           </a>
         </li>
         <li>
@@ -232,7 +268,7 @@
         <span class="mobile-title">TaskFlow Pro</span>
       </div>
       <div class="mobile-header-right">
-        <!-- Spacer to balance/center layout if needed -->
+        <!-- Spacer to balance/center layout -->
       </div>
     </div>
 
@@ -315,3 +351,6 @@
     </div>
   </div>
 </div>
+
+<!-- ── Global AI Command Center Palette & Trigger ── -->
+<app-command-center></app-command-center>

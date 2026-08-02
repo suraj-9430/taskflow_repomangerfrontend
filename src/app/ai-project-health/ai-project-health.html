@@ -1,0 +1,383 @@
+<div class="ai-health-container">
+  
+  <!-- ── 1. Page Header & Project Selector ── -->
+  <div class="health-header">
+    <div class="header-title-box">
+      <div class="brand-pill">
+        <i class="fa-solid fa-sparkles text-amber"></i> TaskFlowPro v2.1 Enterprise AI
+      </div>
+      <h1>AI Project Health Center</h1>
+      <p class="subtitle">Continuous predictive intelligence, risk diagnostics, & managerial decision support powered by Google Gemini 2.5 Flash.</p>
+    </div>
+
+    <div class="header-controls">
+      <div class="project-selector-wrapper">
+        <i class="fa-solid fa-folder-tree selector-icon"></i>
+        <select class="project-select" [(ngModel)]="selectedProjectId" (change)="onProjectChange()">
+          <option value="all">🌐 Portfolio Overview (All Projects)</option>
+          <option *ngFor="let proj of projectsList" [value]="proj._id">
+            📁 {{ proj.projectName }}
+          </option>
+        </select>
+      </div>
+
+      <button class="btn-refresh" (click)="refreshHealth()" [disabled]="isLoading" title="Force AI Refresh">
+        <i class="fa-solid fa-rotate-right" [class.fa-spin]="isLoading"></i>
+        <span>Refresh Insights</span>
+      </button>
+
+      <button class="btn-report" (click)="toggleWeeklyReportModal()">
+        <i class="fa-solid fa-file-invoice"></i>
+        <span>Weekly Report</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Skeleton or Content -->
+  <div *ngIf="isLoading" class="health-loading">
+    <div class="spinner-ring"></div>
+    <h3>Evaluating Continuous Operational Data...</h3>
+    <p>Gemini 2.5 Flash is analyzing task velocity, attendance signals, approvals, and employee workload.</p>
+  </div>
+
+  <div *ngIf="!isLoading && healthData" class="health-content">
+
+    <!-- ── 2. Daily Executive Brief Banner ── -->
+    <div *ngIf="executiveBrief" class="executive-brief-card">
+      <div class="brief-header">
+        <div class="brief-badge">
+          <i class="fa-solid fa-sun text-amber"></i> Daily Executive Brief
+        </div>
+        <span class="brief-time"><i class="fa-regular fa-clock"></i> {{ lastUpdated | date:'shortTime' }}</span>
+      </div>
+
+      <div class="brief-body">
+        <div class="brief-greeting">
+          <h2>Good Morning, {{ executiveBrief.user }} 👋</h2>
+          <p class="brief-recommendation">
+            <i class="fa-solid fa-lightbulb text-amber"></i> <strong>Today's Focus:</strong> {{ executiveBrief.todayRecommendation }}
+          </p>
+        </div>
+
+        <div class="brief-metrics-grid">
+          <div class="brief-metric-chip tone-good">
+            <span class="chip-label">Projects Healthy</span>
+            <span class="chip-value">{{ executiveBrief.projectsHealthy }}</span>
+          </div>
+          <div class="brief-metric-chip tone-warning" [class.tone-critical]="executiveBrief.projectsAtRisk > 0">
+            <span class="chip-label">Projects At Risk</span>
+            <span class="chip-value">{{ executiveBrief.projectsAtRisk }}</span>
+          </div>
+          <div class="brief-metric-chip tone-neutral">
+            <span class="chip-label">High Priority Tasks</span>
+            <span class="chip-value">{{ executiveBrief.highPriorityTasks }}</span>
+          </div>
+          <div class="brief-metric-chip tone-neutral">
+            <span class="chip-label">Pending Approvals</span>
+            <span class="chip-value">{{ executiveBrief.pendingApprovals }}</span>
+          </div>
+          <div class="brief-metric-chip tone-neutral">
+            <span class="chip-label">Employees On Leave</span>
+            <span class="chip-value">{{ executiveBrief.employeesOnLeave }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 3. Core Health Grid (Top Row) ── -->
+    <div class="health-grid-top">
+      
+      <!-- Health Score Gauge Card -->
+      <div class="health-card score-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-heart-pulse text-accent"></i> Project Health Score</h3>
+          <span class="status-pill" [ngClass]="getHealthCategoryClass(healthData.healthScore)">
+            {{ healthData.status }}
+          </span>
+        </div>
+
+        <div class="score-display">
+          <div class="gauge-circle" [attr.style]="'--score-deg: ' + (healthData.healthScore * 3.6) + 'deg'">
+            <div class="gauge-inner">
+              <span class="score-number">{{ healthData.healthScore }}%</span>
+              <span class="score-label">Health Score</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Health Threshold Legend -->
+        <div class="health-thresholds">
+          <div class="threshold-item" [class.active-threshold]="healthData.healthScore >= 90">
+            <span class="dot dot-excellent"></span>
+            <span class="label">90-100</span>
+            <span class="val">Excellent</span>
+          </div>
+          <div class="threshold-item" [class.active-threshold]="healthData.healthScore >= 75 && healthData.healthScore < 90">
+            <span class="dot dot-healthy"></span>
+            <span class="label">75-89</span>
+            <span class="val">Healthy</span>
+          </div>
+          <div class="threshold-item" [class.active-threshold]="healthData.healthScore >= 60 && healthData.healthScore < 75">
+            <span class="dot dot-attention"></span>
+            <span class="label">60-74</span>
+            <span class="val">Needs Attention</span>
+          </div>
+          <div class="threshold-item" [class.active-threshold]="healthData.healthScore < 60">
+            <span class="dot dot-critical"></span>
+            <span class="label">&lt; 60</span>
+            <span class="val">Critical</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Project Natural Language Summary -->
+      <div class="health-card summary-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-brain text-amber"></i> AI Executive Summary</h3>
+          <span class="ai-badge"><i class="fa-solid fa-wand-magic-sparkles"></i> Gemini 2.5 Flash</span>
+        </div>
+
+        <div class="summary-content">
+          <div class="quote-icon"><i class="fa-solid fa-quote-left"></i></div>
+          <p class="summary-text">{{ healthData.summary }}</p>
+        </div>
+
+        <div class="summary-meta">
+          <span class="meta-tag"><i class="fa-solid fa-shield-halved"></i> Risk Level: <strong>{{ healthData.riskLevel }}</strong></span>
+          <span class="meta-tag"><i class="fa-solid fa-bolt"></i> Real-time Evaluation</span>
+        </div>
+      </div>
+
+      <!-- Deadline Velocity & Delay Prediction -->
+      <div class="health-card deadline-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-hourglass-half text-amber"></i> Deadline Prediction</h3>
+          <span class="confidence-badge"><i class="fa-solid fa-circle-check"></i> {{ healthData.deadlinePrediction.confidence }}% Confidence</span>
+        </div>
+
+        <div class="deadline-body">
+          <div class="deadline-dates">
+            <div class="date-box">
+              <span class="box-label">Original Deadline</span>
+              <span class="box-val">{{ healthData.deadlinePrediction.originalDeadline | date:'mediumDate' }}</span>
+            </div>
+            <div class="date-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+            <div class="date-box predicted" [class.has-delay]="healthData.deadlinePrediction.delayDays > 0">
+              <span class="box-label">Predicted Completion</span>
+              <span class="box-val">{{ healthData.deadlinePrediction.predictedCompletion | date:'mediumDate' }}</span>
+            </div>
+          </div>
+
+          <div class="delay-banner" [class.delay-critical]="healthData.deadlinePrediction.delayDays > 3" [class.delay-zero]="healthData.deadlinePrediction.delayDays === 0">
+            <i class="fa-solid" [class.fa-triangle-exclamation]="healthData.deadlinePrediction.delayDays > 0" [class.fa-circle-check]="healthData.deadlinePrediction.delayDays === 0"></i>
+            <span *ngIf="healthData.deadlinePrediction.delayDays > 0">
+              Estimated Completion: <strong>{{ healthData.deadlinePrediction.delayDays }} Days</strong> after planned deadline
+            </span>
+            <span *ngIf="healthData.deadlinePrediction.delayDays === 0">
+              Project is on track to finish on or before target deadline
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. Risk Analysis & AI Recommendations ── -->
+    <div class="health-grid-middle">
+      
+      <!-- Risk Analysis Panel -->
+      <div class="health-card risk-panel">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-triangle-exclamation text-critical"></i> Predictive Risk Analysis</h3>
+          <span class="count-tag">{{ healthData.risks.length }} Active Signals</span>
+        </div>
+
+        <div class="risk-list">
+          <div *ngFor="let r of healthData.risks" class="risk-item">
+            <div class="risk-item-header">
+              <span class="risk-title">{{ r.risk }}</span>
+              <div class="risk-badges">
+                <span class="badge-prob" [ngClass]="getRiskBadgeClass(r.probability)">Prob: {{ r.probability }}</span>
+                <span class="badge-impact" [ngClass]="getRiskBadgeClass(r.impact)">Impact: {{ r.impact }}</span>
+              </div>
+            </div>
+
+            <p class="risk-reason"><i class="fa-solid fa-circle-notch text-amber"></i> <strong>Reason:</strong> {{ r.reason }}</p>
+            <div class="risk-recommendation">
+              <i class="fa-solid fa-user-gear text-accent"></i> <strong>Recommendation:</strong> {{ r.recommendation }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actionable AI Recommendations -->
+      <div class="health-card recommendations-panel">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-list-check text-good"></i> Recommended Managerial Actions</h3>
+        </div>
+
+        <ul class="rec-list">
+          <li *ngFor="let action of healthData.recommendations; let i = index" class="rec-item">
+            <span class="rec-num">{{ i + 1 }}</span>
+            <span class="rec-text">{{ action }}</span>
+            <button class="rec-btn" title="Mark as priority action"><i class="fa-solid fa-arrow-right"></i></button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ── 5. Employee Workload Analysis & Re-balancing ── -->
+    <div class="health-card workload-section">
+      <div class="card-header">
+        <div>
+          <h3><i class="fa-solid fa-users-gear text-accent"></i> Employee Workload Analysis</h3>
+          <p class="card-subtitle">Real-time resource utilization and capacity distribution</p>
+        </div>
+
+        <button class="btn-rebalance" (click)="applyWorkloadRebalance()" [disabled]="isRebalancing">
+          <i class="fa-solid fa-arrows-split-up-and-left" [class.fa-spin]="isRebalancing"></i>
+          <span>{{ isRebalancing ? 'Re-balancing Workload...' : 'Apply AI Re-balancing' }}</span>
+        </button>
+      </div>
+
+      <div class="workload-table-wrapper">
+        <table class="workload-table">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Department</th>
+              <th>Assigned Tasks</th>
+              <th>Utilization Meter</th>
+              <th>Status</th>
+              <th>Gemini Recommendation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let emp of healthData.workload">
+              <td class="emp-cell">
+                <div class="emp-avatar">{{ emp.employee.charAt(0) }}</div>
+                <span class="emp-name">{{ emp.employee }}</span>
+              </td>
+              <td><span class="dept-tag">{{ emp.department || 'Engineering' }}</span></td>
+              <td class="tasks-count"><strong>{{ emp.tasks }}</strong> tasks</td>
+              <td class="meter-cell">
+                <div class="util-bar-bg">
+                  <div class="util-bar-fill" [attr.style]="'width: ' + emp.utilization + '%'" [ngClass]="getUtilizationClass(emp.utilization)"></div>
+                </div>
+                <span class="util-percent">{{ emp.utilization }}%</span>
+              </td>
+              <td>
+                <span class="status-chip" [ngClass]="getUtilizationClass(emp.utilization)">
+                  {{ emp.utilization >= 85 ? 'Overloaded' : emp.utilization >= 60 ? 'Optimal' : 'Underutilized' }}
+                </span>
+              </td>
+              <td class="rec-cell">{{ emp.recommendation }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── 6. Natural Language AI Q&A Panel ── -->
+    <div class="health-card qa-section">
+      <div class="card-header">
+        <div>
+          <h3><i class="fa-solid fa-circle-question text-amber"></i> AI Natural Language Decision Assistant</h3>
+          <p class="card-subtitle">Ask questions about velocity, bottlenecks, and priorities in plain English</p>
+        </div>
+      </div>
+
+      <!-- Suggested Question Chips -->
+      <div class="suggested-chips">
+        <span class="chips-label">Quick Prompts:</span>
+        <button *ngFor="let q of suggestedQuestions" class="chip-prompt" (click)="askQuestion(q)">
+          {{ q }}
+        </button>
+      </div>
+
+      <!-- Question Input Bar -->
+      <div class="qa-input-row">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" class="qa-input" [(ngModel)]="userQuestion" placeholder="e.g. Which employee has the highest workload? Will we complete before deadline?" (keyup.enter)="askQuestion()">
+        <button class="btn-ask" (click)="askQuestion()" [disabled]="isAsking || !userQuestion.trim()">
+          <i class="fa-solid fa-paper-plane" *ngIf="!isAsking"></i>
+          <i class="fa-solid fa-spinner fa-spin" *ngIf="isAsking"></i>
+          <span>Ask Gemini</span>
+        </button>
+      </div>
+
+      <!-- Q&A Result Box -->
+      <div *ngIf="qaResult" class="qa-result-box">
+        <div class="qa-result-header">
+          <span class="qa-badge"><i class="fa-solid fa-robot"></i> Gemini Decision Support Response</span>
+          <span *ngIf="qaResult.riskLevel" class="risk-tag" [ngClass]="getRiskBadgeClass(qaResult.riskLevel)">Risk: {{ qaResult.riskLevel }}</span>
+        </div>
+
+        <p class="qa-answer">{{ qaResult.answer }}</p>
+
+        <div *ngIf="qaResult.reason" class="qa-detail">
+          <i class="fa-solid fa-circle-info text-accent"></i> <strong>Context / Reason:</strong> {{ qaResult.reason }}
+        </div>
+
+        <div *ngIf="qaResult.recommendation" class="qa-detail rec">
+          <i class="fa-solid fa-circle-check text-good"></i> <strong>Action Plan:</strong> {{ qaResult.recommendation }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 7. Weekly Report Modal ── -->
+  <div *ngIf="showWeeklyReportModal" class="modal-backdrop" (click)="toggleWeeklyReportModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-invoice text-amber"></i> Weekly Project Intelligence Report</h3>
+        <button class="btn-close" (click)="toggleWeeklyReportModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div *ngIf="weeklyReport" class="modal-body">
+        <div class="weekly-summary-box">
+          <p>{{ weeklyReport.weeklySummary }}</p>
+        </div>
+
+        <div class="weekly-stats-grid">
+          <div class="stat-box">
+            <span class="stat-num">{{ weeklyReport.projectsCompleted }}</span>
+            <span class="stat-lbl">Projects Completed</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num">{{ weeklyReport.tasksCompleted }}</span>
+            <span class="stat-lbl">Tasks Completed</span>
+          </div>
+          <div class="stat-box warning">
+            <span class="stat-num">{{ weeklyReport.delayedTasks }}</span>
+            <span class="stat-lbl">Delayed Tasks</span>
+          </div>
+          <div class="stat-box good">
+            <span class="stat-num">{{ weeklyReport.overallHealth }}</span>
+            <span class="stat-lbl">Overall Velocity</span>
+          </div>
+        </div>
+
+        <div class="weekly-section">
+          <h4><i class="fa-solid fa-trophy text-amber"></i> Achievements This Week</h4>
+          <ul>
+            <li *ngFor="let ach of weeklyReport.achievements"><i class="fa-solid fa-check text-good"></i> {{ ach }}</li>
+          </ul>
+        </div>
+
+        <div class="weekly-section">
+          <h4><i class="fa-solid fa-bullseye text-accent"></i> Focus For Next Week</h4>
+          <ul>
+            <li *ngFor="let foc of weeklyReport.focusNextWeek"><i class="fa-solid fa-arrow-right text-accent"></i> {{ foc }}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="toggleWeeklyReportModal()">Close</button>
+        <button class="btn-primary" (click)="toggleWeeklyReportModal()"><i class="fa-solid fa-print"></i> Export PDF Summary</button>
+      </div>
+    </div>
+  </div>
+
+</div>

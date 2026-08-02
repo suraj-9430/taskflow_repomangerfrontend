@@ -6,11 +6,12 @@ import { FormsModule } from '@angular/forms';
 import { environment } from '../../environments/environment';
 import { AiService } from '../services/ai.service';
 import { AuthService } from '../services/auth.service';
+import { CommandCenter } from '../command-center/command-center';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, CommonModule, FormsModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, CommonModule, FormsModule, CommandCenter],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })

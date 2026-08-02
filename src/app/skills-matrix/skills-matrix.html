@@ -1,0 +1,260 @@
+<div class="skills-container">
+
+  <!-- ── 1. Page Header & Actions ── -->
+  <div class="skills-header">
+    <div class="header-title">
+      <div class="pill-badge"><i class="fa-solid fa-brain text-amber"></i> TaskFlowPro v2.2 Skills Matrix</div>
+      <h1>AI Capability & Resource Allocation</h1>
+      <p class="subtitle">Evaluate technical proficiency, track domain experience, analyze skill gaps, and allocate resources using Google Gemini 2.5 Flash.</p>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-suggest-modal" (click)="toggleSuggestModal()">
+        <i class="fa-solid fa-user-check"></i>
+        <span>Suggest Employee for Task</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="skills-tabs">
+    <button class="tab-btn" [class.active]="activeTab === 'my-skills'" (click)="activeTab = 'my-skills'">
+      <i class="fa-solid fa-id-card"></i> My Skills Matrix
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'team-matrix'" (click)="activeTab = 'team-matrix'">
+      <i class="fa-solid fa-chart-pie"></i> Skill Gap Analysis
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'learning-path'" (click)="activeTab = 'learning-path'">
+      <i class="fa-solid fa-graduation-cap"></i> AI Learning Recommendations
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading Skills Matrix & Operational Capacity...</p>
+  </div>
+
+  <div *ngIf="!isLoading" class="tab-content-wrapper">
+
+    <!-- ── TAB 1: My Skills Matrix ── -->
+    <div *ngIf="activeTab === 'my-skills'" class="my-skills-view">
+      
+      <!-- Employee Profile Summary Card -->
+      <div *ngIf="userInfo" class="user-summary-banner">
+        <div class="user-info-left">
+          <div class="user-avatar">{{ userInfo.firstName.charAt(0) }}</div>
+          <div>
+            <h2>{{ userInfo.firstName }} {{ userInfo.lastName }}</h2>
+            <span class="desig-tag">{{ userInfo.designation || 'Developer' }} • {{ userInfo.department || 'Engineering' }}</span>
+          </div>
+        </div>
+        <div class="user-info-right">
+          <span class="verified-badge"><i class="fa-solid fa-circle-check"></i> Manager Verified Skills</span>
+        </div>
+      </div>
+
+      <!-- Add Skill Input Form -->
+      <div class="card add-skill-card">
+        <h3><i class="fa-solid fa-plus-circle text-amber"></i> Add New Skill</h3>
+        <div class="add-skill-row">
+          <input type="text" class="input-text" [(ngModel)]="newSkillName" placeholder="e.g. Docker, GraphQL, Python">
+          
+          <select class="select-cat" [(ngModel)]="newSkillCategory">
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+
+          <div class="star-rating-select">
+            <span class="rating-lbl">Rating:</span>
+            <div class="stars">
+              <i *ngFor="let star of [1,2,3,4,5]" class="fa-star" [class.fa-solid]="star <= newSkillRating" [class.fa-regular]="star > newSkillRating" (click)="newSkillRating = star"></i>
+            </div>
+          </div>
+
+          <button class="btn-add-skill" (click)="addTechnicalSkill()" [disabled]="!newSkillName.trim()">
+            <i class="fa-solid fa-check"></i> Add Skill
+          </button>
+        </div>
+      </div>
+
+      <!-- Skill Categories Grid -->
+      <div class="categories-grid">
+        <div *ngFor="let cat of categories" class="card category-card">
+          <div class="cat-header">
+            <h4>{{ cat }}</h4>
+            <span class="cat-count">{{ getSkillsByCategory(cat).length }} Skills</span>
+          </div>
+
+          <div *ngIf="getSkillsByCategory(cat).length === 0" class="empty-skills">
+            No skills added in {{ cat }} yet.
+          </div>
+
+          <div class="skill-list">
+            <div *ngFor="let skill of getSkillsByCategory(cat); let i = index" class="skill-row">
+              <div class="skill-name-box">
+                <span class="skill-name">{{ skill.name }}</span>
+                <i *ngIf="skill.verified" class="fa-solid fa-circle-check text-good" title="Manager Verified"></i>
+              </div>
+
+              <!-- Star Rating Bar -->
+              <div class="star-rating-display">
+                <i *ngFor="let star of [1,2,3,4,5]" class="fa-star" [class.fa-solid]="star <= skill.rating" [class.fa-regular]="star > skill.rating" (click)="setRating(skill, star)"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Soft Skills & Domain Experience -->
+      <div class="grid-two-cols">
+        <div class="card">
+          <h3><i class="fa-solid fa-user-astronaut text-accent"></i> Soft Skills</h3>
+          <div class="tags-cloud">
+            <span *ngFor="let soft of skills.soft" class="chip-tag soft-chip">{{ soft }}</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3><i class="fa-solid fa-layer-group text-amber"></i> Domain & Project Experience</h3>
+          <div class="tags-cloud">
+            <span *ngFor="let exp of skills.experience" class="chip-tag exp-chip">{{ exp }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── TAB 2: Skill Gap Analysis ── -->
+    <div *ngIf="activeTab === 'team-matrix'" class="team-matrix-view">
+      <div *ngIf="gapAnalysis" class="card gap-card">
+        <div class="gap-header">
+          <div>
+            <h2><i class="fa-solid fa-chart-pie text-amber"></i> Team Skill Gap Analysis</h2>
+            <p class="subtitle">Identified missing skill sets required for upcoming projects</p>
+          </div>
+          <div class="coverage-badge">
+            <span class="coverage-val">{{ gapAnalysis.teamCoverage }}</span>
+            <span class="coverage-lbl">Team Coverage</span>
+          </div>
+        </div>
+
+        <div class="missing-skills-list">
+          <h3>Missing & High-Demand Skills</h3>
+          <div class="missing-grid">
+            <div *ngFor="let item of gapAnalysis.missingSkills" class="missing-item-card">
+              <div class="missing-top">
+                <span class="missing-name">{{ item.name }}</span>
+                <span class="demand-pill" [class.demand-high]="item.level === 'High Demand'">{{ item.level }}</span>
+              </div>
+              <p class="missing-reason">{{ item.reason }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="training-recs">
+          <h3><i class="fa-solid fa-lightbulb text-amber"></i> Recommended Team Training Actions</h3>
+          <ul>
+            <li *ngFor="let rec of gapAnalysis.recommendations"><i class="fa-solid fa-circle-check text-good"></i> {{ rec }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 3: AI Learning Recommendations ── -->
+    <div *ngIf="activeTab === 'learning-path'" class="learning-view">
+      <div *ngIf="learningRoadmap" class="card roadmap-card">
+        <div class="roadmap-header">
+          <div>
+            <h2><i class="fa-solid fa-graduation-cap text-amber"></i> AI Personalized Skill Roadmap for {{ learningRoadmap.user }}</h2>
+            <p class="subtitle">{{ learningRoadmap.reason }}</p>
+          </div>
+        </div>
+
+        <div class="current-top-skills">
+          <span class="lbl">Your Current Strengths:</span>
+          <span *ngFor="let sk of learningRoadmap.currentTopSkills" class="chip-tag strength-chip">⭐ {{ sk }}</span>
+        </div>
+
+        <div class="learning-list">
+          <h3>Recommended Learning Path</h3>
+          <div class="learning-grid">
+            <div *ngFor="let item of learningRoadmap.recommendedLearning" class="learning-item">
+              <div class="learning-item-top">
+                <span class="item-title">{{ item.name }}</span>
+                <span class="priority-chip">{{ item.priority }} Priority</span>
+              </div>
+              <p class="growth-label"><i class="fa-solid fa-chart-line text-good"></i> Expected Growth: <strong>{{ item.expectedGrowth }}</strong></p>
+              <button class="btn-start-course"><i class="fa-solid fa-play"></i> Start AI Course Path</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── 2. Suggest Employee Modal ── -->
+  <div *ngIf="showSuggestModal" class="modal-backdrop" (click)="toggleSuggestModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-check text-amber"></i> Gemini AI Resource Allocation</h3>
+        <button class="btn-close" (click)="toggleSuggestModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-intro">Specify the task requirements to let Gemini recommend the optimal employee based on skills, capacity, and availability.</p>
+
+        <div class="form-group">
+          <label>Task Title *</label>
+          <input type="text" class="form-input" [(ngModel)]="taskTitle" placeholder="e.g. Integrate RabbitMQ Event Consumer">
+        </div>
+
+        <div class="form-group">
+          <label>Task Description</label>
+          <textarea class="form-textarea" [(ngModel)]="taskDescription" placeholder="Brief details about what skills are needed..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Required Skills</label>
+          <div class="skills-input-row">
+            <input type="text" class="form-input" [(ngModel)]="requiredSkillInput" placeholder="Add skill (e.g. Node.js)" (keyup.enter)="addRequiredSkill()">
+            <button class="btn-add-chip" (click)="addRequiredSkill()">Add</button>
+          </div>
+
+          <div class="required-chips">
+            <span *ngFor="let s of requiredSkills; let i = index" class="req-chip">
+              {{ s }} <i class="fa-solid fa-xmark" (click)="removeRequiredSkill(i)"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- Suggestion Result -->
+        <div *ngIf="suggestionResult" class="suggestion-result-box">
+          <div class="res-header">
+            <div class="res-user">
+              <i class="fa-solid fa-user-tie text-accent"></i>
+              <span>Recommended: <strong>{{ suggestionResult.recommendedEmployee }}</strong></span>
+            </div>
+            <span class="confidence-tag"><i class="fa-solid fa-circle-check text-good"></i> {{ suggestionResult.confidence }}% Match</span>
+          </div>
+
+          <p class="res-reason">{{ suggestionResult.reason }}</p>
+
+          <div class="res-meta">
+            <span>Workload Utilization: <strong>{{ suggestionResult.utilization }}%</strong></span>
+            <span>Matched Skills: <strong>{{ suggestionResult.matchedSkills.join(', ') }}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="toggleSuggestModal()">Close</button>
+        <button class="btn-primary" (click)="requestEmployeeSuggestion()" [disabled]="isSuggesting || !taskTitle.trim()">
+          <i class="fa-solid fa-wand-magic-sparkles" *ngIf="!isSuggesting"></i>
+          <i class="fa-solid fa-spinner fa-spin" *ngIf="isSuggesting"></i>
+          <span>Suggest Employee</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

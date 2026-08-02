@@ -1,0 +1,952 @@
+:host {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ai-health-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: var(--bg-surface-primary, #0f172a);
+  color: var(--text-primary, #f8fafc);
+  min-height: 100vh;
+  font-family: inherit;
+}
+
+/* ── 1. Page Header ── */
+.health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.brand-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.health-header h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94a3b8);
+  max-width: 700px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.project-selector-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.selector-icon {
+  position: absolute;
+  left: 0.85rem;
+  color: #38bdf8;
+  pointer-events: none;
+}
+
+.project-select {
+  padding: 0.6rem 1rem 0.6rem 2.4rem;
+  border-radius: 0.5rem;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  color: #f8fafc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.project-select:hover {
+  border-color: #38bdf8;
+}
+
+.btn-refresh, .btn-report {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  background: rgba(56, 189, 248, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-report {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+}
+
+.btn-report:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Loading State */
+.health-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  text-align: center;
+}
+
+.spinner-ring {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 2. Daily Executive Brief Banner ── */
+.executive-brief-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 0.85rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.brief-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.brief-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #f59e0b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.brief-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.brief-greeting h2 {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.brief-recommendation {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid #f59e0b;
+}
+
+.brief-metrics-grid {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.brief-metric-chip {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 130px;
+}
+
+.chip-label {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.chip-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.tone-good .chip-value { color: #10b981; }
+.tone-warning .chip-value { color: #f59e0b; }
+.tone-critical .chip-value { color: #ef4444; }
+
+/* ── Common Card Styles ── */
+.health-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.health-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 0.85rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* ── 3. Top Grid ── */
+.health-grid-top {
+  display: grid;
+  grid-template-columns: 320px 1fr 340px;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .health-grid-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Gauge Circle */
+.score-display {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+}
+
+.gauge-circle {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: conic-gradient(#10b981 var(--score-deg), rgba(255, 255, 255, 0.1) 0deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.gauge-inner {
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  background: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-number {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.score-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.health-thresholds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  font-size: 0.75rem;
+}
+
+.threshold-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.35rem;
+  opacity: 0.6;
+}
+
+.threshold-item.active-threshold {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 700;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; }
+.dot-excellent { background: #10b981; }
+.dot-healthy { background: #38bdf8; }
+.dot-attention { background: #f59e0b; }
+.dot-critical { background: #ef4444; }
+
+.status-pill {
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.category-excellent { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.category-healthy { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+.category-attention { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.category-critical { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+/* AI Summary Card */
+.ai-badge {
+  font-size: 0.7rem;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+  font-weight: 700;
+}
+
+.summary-content {
+  position: relative;
+  padding: 1rem 1rem 1rem 2.2rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 0.5rem;
+  margin: 0.5rem 0 1rem 0;
+  border-left: 3px solid #38bdf8;
+}
+
+.quote-icon {
+  position: absolute;
+  left: 0.65rem;
+  top: 0.85rem;
+  color: rgba(56, 189, 248, 0.4);
+  font-size: 1rem;
+}
+
+.summary-text {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+.summary-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Deadline Card */
+.confidence-badge {
+  font-size: 0.75rem;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.deadline-dates {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1rem 0;
+  gap: 0.5rem;
+}
+
+.date-box {
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0.85rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex: 1;
+}
+
+.box-label {
+  font-size: 0.65rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.box-val {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-top: 0.2rem;
+}
+
+.date-box.has-delay {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.date-arrow {
+  color: #94a3b8;
+}
+
+.delay-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.delay-banner.delay-critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.delay-banner.delay-zero {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+/* ── 4. Middle Grid (Risks & Actions) ── */
+.health-grid-middle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 992px) {
+  .health-grid-middle {
+    grid-template-columns: 1fr;
+  }
+}
+
+.count-tag {
+  font-size: 0.75rem;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.risk-item {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  padding: 0.85rem 1rem;
+}
+
+.risk-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.risk-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #f8fafc;
+}
+
+.risk-badges {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.badge-prob, .badge-impact {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  text-transform: uppercase;
+}
+
+.badge-critical { background: rgba(239, 68, 68, 0.25); color: #fca5a5; }
+.badge-high { background: rgba(245, 158, 11, 0.25); color: #fde047; }
+.badge-medium { background: rgba(56, 189, 248, 0.25); color: #7dd3fc; }
+.badge-low { background: rgba(16, 185, 129, 0.25); color: #6ee7b7; }
+
+.risk-reason {
+  margin: 0 0 0.4rem 0;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.risk-recommendation {
+  font-size: 0.82rem;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.35rem;
+}
+
+/* Recommendations List */
+.rec-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rec-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rec-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rec-text {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.rec-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.rec-btn:hover {
+  color: #10b981;
+}
+
+/* ── 5. Employee Workload Section ── */
+.btn-rebalance {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-rebalance:hover:not(:disabled) {
+  background: rgba(168, 85, 247, 0.25);
+  transform: translateY(-1px);
+}
+
+.workload-table-wrapper {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.workload-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+  text-align: left;
+}
+
+.workload-table th {
+  padding: 0.65rem 0.85rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workload-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.emp-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.emp-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.dept-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+}
+
+.meter-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 140px;
+}
+
+.util-bar-bg {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.util-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+.util-overloaded { background: #ef4444; color: #ef4444; }
+.util-balanced { background: #10b981; color: #10b981; }
+.util-underutilized { background: #38bdf8; color: #38bdf8; }
+
+.status-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rec-cell {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+/* ── 6. AI Q&A Panel ── */
+.suggested-chips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.chips-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.chip-prompt {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chip-prompt:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.qa-input-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  color: #94a3b8;
+}
+
+.qa-input {
+  flex: 1;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  border-radius: 0.6rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.qa-input:focus {
+  border-color: #f59e0b;
+}
+
+.btn-ask {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.6rem;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.btn-ask:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.qa-result-box {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 0.6rem;
+  border-left: 4px solid #f59e0b;
+}
+
+.qa-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.qa-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.risk-tag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+}
+
+.qa-answer {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #f8fafc;
+}
+
+.qa-detail {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  margin-top: 0.35rem;
+}
+
+/* ── 7. Modal Styles ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.85rem;
+  width: 100%;
+  max-width: 650px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h3 { margin: 0; font-size: 1.1rem; }
+
+.btn-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1.25rem;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.weekly-summary-box {
+  padding: 0.85rem;
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid #f59e0b;
+  border-radius: 0.4rem;
+  font-size: 0.88rem;
+}
+
+.weekly-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 0.5rem;
+}
+
+.stat-num { font-size: 1.4rem; font-weight: 800; }
+.stat-lbl { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; }
+
+.weekly-section h4 { margin: 0 0 0.5rem 0; font-size: 0.9rem; }
+.weekly-section ul { padding-left: 1.25rem; margin: 0; font-size: 0.83rem; color: #cbd5e1; }
+.weekly-section li { margin-bottom: 0.35rem; }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-secondary {
+  padding: 0.55rem 1rem;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  padding: 0.55rem 1rem;
+  border-radius: 0.4rem;
+  background: #f59e0b;
+  color: #0f172a;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+}

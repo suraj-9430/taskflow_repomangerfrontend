@@ -70,6 +70,35 @@ export class SocketService {
     }
   }
 
+  on(eventName: string, callback: (data: any) => void): void {
+    if (!this.socket) {
+      this.connect();
+    }
+    const sock = this.socket;
+    if (sock) {
+      sock.on(eventName, callback);
+    }
+  }
+
+  off(eventName: string): void {
+    const sock = this.socket;
+    if (sock) {
+      sock.off(eventName);
+    }
+  }
+
+  listen<T = any>(eventName: string): Subject<T> {
+    const subject = new Subject<T>();
+    if (!this.socket) {
+      this.connect();
+    }
+    const sock = this.socket;
+    if (sock) {
+      sock.on(eventName, (data: T) => subject.next(data));
+    }
+    return subject;
+  }
+
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();

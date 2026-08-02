@@ -1,0 +1,81 @@
+<!-- Global Floating AI Command Center Trigger Badge -->
+<button class="cmd-trigger-btn" (click)="toggleCommandCenter()" title="Open AI Command Center (Ctrl+K)">
+  <i class="fa-solid fa-terminal text-amber"></i>
+  <span>AI Command Bar</span>
+  <kbd class="shortcut-kbd">Ctrl K</kbd>
+</button>
+
+<!-- Command Center Modal Backdrop & Palette -->
+<div *ngIf="isOpen" class="cmd-backdrop" (click)="toggleCommandCenter()">
+  <div class="cmd-palette" (click)="$event.stopPropagation()">
+    
+    <!-- Top Input Header -->
+    <div class="cmd-header">
+      <i class="fa-solid fa-wand-magic-sparkles cmd-sparkle"></i>
+      <input type="text" class="cmd-input" [(ngModel)]="commandInput" placeholder="Type a command in natural language... (e.g. Apply casual leave tomorrow)" (keyup.enter)="runCommand()" autofocus>
+      <button class="cmd-close-btn" (click)="toggleCommandCenter()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Suggested Commands List -->
+    <div *ngIf="!commandResult && !isExecuting" class="cmd-suggestions">
+      <span class="sugg-label">Supported Conversational Actions:</span>
+      <div class="sugg-chips">
+        <button *ngFor="let prompt of suggestedCommands" class="sugg-chip" (click)="runCommand(prompt)">
+          <i class="fa-solid fa-bolt text-amber"></i> {{ prompt }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading Execution Indicator -->
+    <div *ngIf="isExecuting" class="cmd-loading">
+      <div class="spinner-sm"></div>
+      <span>Interpreting intent, checking RBAC permissions, & executing...</span>
+    </div>
+
+    <!-- Result / Multi-turn Response Card -->
+    <div *ngIf="commandResult && !isExecuting" class="cmd-result-card">
+      
+      <!-- Status Badge -->
+      <div class="result-header">
+        <span *ngIf="commandResult.status === 'EXECUTED'" class="status-pill status-success">
+          <i class="fa-solid fa-circle-check"></i> Action Executed Successfully
+        </span>
+        <span *ngIf="commandResult.status === 'NEED_INFO'" class="status-pill status-info">
+          <i class="fa-solid fa-circle-question"></i> Additional Field Required
+        </span>
+        <span *ngIf="commandResult.status === 'RBAC_DENIED'" class="status-pill status-danger">
+          <i class="fa-solid fa-shield-xmark"></i> Permission Denied
+        </span>
+
+        <span *ngIf="commandResult.intent" class="intent-tag">Intent: {{ commandResult.intent }}</span>
+      </div>
+
+      <!-- Result Message -->
+      <p class="result-message">{{ commandResult.message }}</p>
+
+      <!-- Conversational Follow-up Choices for NEED_INFO -->
+      <div *ngIf="commandResult.status === 'NEED_INFO' && commandResult.promptChoices" class="prompt-choices-box">
+        <p class="prompt-question"><i class="fa-solid fa-lightbulb text-amber"></i> {{ commandResult.promptChoices.question }}</p>
+        <div class="choices-buttons">
+          <button *ngFor="let opt of commandResult.promptChoices.options" class="btn-choice" (click)="answerPromptChoice(commandResult.promptChoices!.fieldName, opt)">
+            {{ opt }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Executed Output Data Preview -->
+      <div *ngIf="commandResult.status === 'EXECUTED' && commandResult.data" class="execution-preview">
+        <span class="preview-title"><i class="fa-solid fa-database text-good"></i> System Updated Result:</span>
+        <div class="preview-box">
+          <p><strong>{{ commandResult.data.message || 'Action executed successfully.' }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer shortcut note -->
+    <div class="cmd-footer">
+      <span>Press <kbd>Enter</kbd> to execute • Press <kbd>Esc</kbd> to close</span>
+    </div>
+
+  </div>
+</div>

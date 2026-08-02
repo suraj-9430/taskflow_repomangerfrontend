@@ -20,6 +20,9 @@ import { AnalyticsDashboard } from './analytics-dashboard/analytics-dashboard';
 import { CalendarScheduler } from './calendar-scheduler/calendar-scheduler';
 import { ApprovalHub } from './approval-hub/approval-hub';
 import { ChatChannels } from './chat-channels/chat-channels';
+import { AiProjectHealth } from './ai-project-health/ai-project-health';
+import { SkillsMatrix } from './skills-matrix/skills-matrix';
+import { CommandCenter } from './command-center/command-center';
 
 export const routes: Routes = [
   { path:"", loadComponent: () => import('./login-page/login-page').then(m => m.LoginPage) ,pathMatch:'full'},
@@ -36,6 +39,9 @@ export const routes: Routes = [
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leave', component: LeaveManagement },
       { path: 'analytics', component: AnalyticsDashboard },
+      { path: 'ai-health', component: AiProjectHealth },
+      { path: 'skills', component: SkillsMatrix },
+      { path: 'command-center', component: CommandCenter },
       { path: 'calendar', component: CalendarScheduler },
       { path: 'approvals', component: ApprovalHub },
       { path: 'channels', component: ChatChannels }
@@ -56,6 +62,9 @@ export const routes: Routes = [
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leave', component: LeaveManagement },
       { path: 'analytics', component: AnalyticsDashboard },
+      { path: 'ai-health', component: AiProjectHealth },
+      { path: 'skills', component: SkillsMatrix },
+      { path: 'command-center', component: CommandCenter },
       { path: 'calendar', component: CalendarScheduler },
       { path: 'approvals', component: ApprovalHub },
       { path: 'channels', component: ChatChannels }
@@ -74,6 +83,9 @@ export const routes: Routes = [
       { path: 'notifications', component: Notifications },
       { path: 'attendance', component: AttendanceComponent },
       { path: 'leave', component: LeaveManagement },
+      { path: 'ai-health', component: AiProjectHealth },
+      { path: 'skills', component: SkillsMatrix },
+      { path: 'command-center', component: CommandCenter },
       { path: 'approvals', component: ApprovalHub },
       { path: 'channels', component: ChatChannels }
     ]
@@ -81,3 +93,4 @@ export const routes: Routes = [
 
   { path: '**', component: ErrorPage }
 ];
+
