@@ -37,8 +37,10 @@
 
 ### ⚡ 4. Enterprise Architecture & Operational Support
 - **GPS-Based Attendance**: Geofenced check-ins with Spherical Law of Cosines calculation ($\le 10$ meters office threshold).
-- **Asynchronous RabbitMQ Email Queues**: Non-blocking email notifications for task & project assignments.
-- **Redis & In-Memory Caching**: 5-minute TTL caching layer for sub-second AI response times.
+- **Session Privacy & Storage Isolation**: Automatic `clearUserScopedSession()` wiping tokens, drafts, and sensitive user cache on logout while preserving client-level theme preferences.
+- **Distributed Request Tracing**: Automatic `X-Request-Id` correlation injection across all outgoing HTTP calls via Angular interceptor.
+- **Asynchronous RabbitMQ Email Queues**: Non-blocking email notifications for task & project assignments with dead-letter queue recovery.
+- **Redis & In-Memory Caching**: Tag-invalidated caching layer for sub-second responses and automated eviction upon data mutations.
 - **Live Websocket Channels**: Real-time project discussions, task comments, and mention notifications via Socket.IO.
 
 ---
