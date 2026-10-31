@@ -53,15 +53,43 @@ export class AuthService {
     );
   }
 
+  /**
+   * Safely clears all user-scoped tokens, cached state, and offline drafts (PDF Section 14)
+   * while preserving device-level preferences like dark/light theme mode.
+   */
+  clearUserScopedSession(): void {
+    const theme = localStorage.getItem('theme') || localStorage.getItem('theme-mode');
+    const preservedKeys = new Set(['theme', 'theme-mode', 'app_lang', 'device_uuid']);
+
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !preservedKeys.has(key)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
+
+    if (theme) {
+      localStorage.setItem('theme', theme);
+    }
+
+    try {
+      sessionStorage.clear();
+    } catch (_) {
+      // Ignore sessionStorage exceptions in constrained environments
+    }
+
+    this.currentUserSubject.next(null);
+  }
+
   logout(): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/users/logout`, {}, { withCredentials: true }).pipe(
       tap(() => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        this.currentUserSubject.next(null);
+        this.clearUserScopedSession();
       }),
-      catchError((err) => {
-        this.currentUserSubject.next(null);
+      catchError(() => {
+        this.clearUserScopedSession();
         return of(null);
       })
     );

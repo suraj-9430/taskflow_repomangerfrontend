@@ -16,11 +16,20 @@ export const authInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
   const authService = inject(AuthService);
 
   // Set withCredentials globally so HttpOnly cookies are automatically sent (for refresh token)
-  // Also attach the access token from localStorage for cross-domain requests
+  // Also attach the access token and an X-Request-Id correlation header (PDF Section 14 & 16)
   const token = localStorage.getItem('accessToken');
+  const requestId = crypto?.randomUUID ? crypto.randomUUID() : `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const headers: Record<string, string> = {
+    'X-Request-Id': requestId,
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const authReq = req.clone({
     withCredentials: true,
-    setHeaders: token ? { Authorization: `Bearer ${token}` } : {}
+    setHeaders: headers,
   });
 
   return next(authReq).pipe(
@@ -56,8 +65,8 @@ function handle401Error(request: HttpRequest<any>, next: HttpHandlerFn, http: Ht
       }),
       catchError((err) => {
         isRefreshing = false;
-        // Refresh token expired or revoked, clear memory auth state and redirect to login
-        authService.setCurrentUser(null);
+        // Refresh token expired or revoked, clear session state and redirect to login
+        authService.clearUserScopedSession();
         router.navigate(['/']);
         return throwError(() => err);
       })

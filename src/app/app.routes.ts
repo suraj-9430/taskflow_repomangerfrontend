@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
-import { LoginPage } from './login-page/login-page';
-import { Layout } from './layout/layout';
 import { AdminDashboard } from './admin-dashboard/admin-dashboard';
 import { Createandmanage } from './createandmanage/createandmanage';
 import { ManagerDashboard } from './manager-dashboard/manager-dashboard';

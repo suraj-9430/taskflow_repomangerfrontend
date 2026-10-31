@@ -51,3 +51,7 @@ Thumbs.db
 
 # Updates Folder
 Project Updates/
+
+# Backend Directory Junction (Links to separate repo)
+/backend
+backend/
